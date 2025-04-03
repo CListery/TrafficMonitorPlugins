@@ -194,3 +194,16 @@ std::wstring CCommon::vectorJoinString(const std::vector<std::wstring> data, con
     }
     return str;
 }
+
+std::string CCommon::removeChar(const std::string &str, char ch)
+{
+    std::string result;
+    for (char c : str)
+    {
+        if (c != ch)
+        {
+            result += c;
+        }
+    }
+    return result;
+}

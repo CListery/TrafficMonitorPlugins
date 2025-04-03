@@ -2,6 +2,9 @@
 #include <string>
 #include <map>
 #include "resource.h"
+#include "StockDef.h"
+
+using namespace STOCK;
 
 #define g_data CDataManager::Instance()
 
@@ -13,14 +16,14 @@ struct SettingData
 };
 
 // Stock显示数据
-struct StockInfo
-{
-    std::wstring pc = L"--%";
-    std::wstring p = L"--";
-    std::wstring name = L"";
-    std::wstring ToString(bool include_name = true) const;
-    bool IsEmpty() const;
-};
+// struct StockInfo
+// {
+//     std::wstring pc = L"--%";
+//     std::wstring p = L"--";
+//     std::wstring name = L"";
+//     std::wstring ToString(bool include_name = true) const;
+//     bool IsEmpty() const;
+// };
 
 class CDataManager
 {
@@ -40,14 +43,18 @@ public:
     int RDPI(int pixel);
     HICON GetIcon(UINT id);
     void ResetText();
-    StockInfo& GetStockInfo(const std::wstring& key);
+    std::shared_ptr<StockData> GetStockInfo(const std::wstring& code);
+
+    // 获取最新数据
+    void RequestRealtimeData();
 
     SettingData m_setting_data;
     std::wstring m_log_path;
     bool m_right_align{};       //数值是否右对齐
 
 private:
-    std::map<std::wstring, StockInfo> m_stock_info_map;
+    // std::map<std::wstring, StockInfo> m_stock_info_map;
+    STOCK::StockMarket stockMarket;
 
     std::wstring m_config_dir;
 

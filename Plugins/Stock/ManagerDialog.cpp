@@ -134,7 +134,7 @@ void CManagerDialog::OnBnClickedOk()
     {
         g_data.m_setting_data = m_data;
         g_data.SaveConfig();
-        Stock::Instance().SendStockInfoQequest();
+        Stock::Instance().SendStockInfoRequest();
         MessageBox(g_data.StringRes(IDS_RESTART_TRAFFICMONITOR_INFO), g_data.StringRes(IDS_PLUGIN_NAME), MB_ICONINFORMATION | MB_OK);
     }
     CDialog::OnOK();

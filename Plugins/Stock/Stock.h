@@ -7,11 +7,11 @@
 #include <map>
 #include <vector>
 
-#define kSH "sh" // 上海
-#define kSZ "sz" // 深圳
-#define kHK "rt_hk" // 香港
-#define kMG "gb" // 美国
-#define kBJ "bj" // 北京
+constexpr auto kSH = L"sh"; // 上海
+constexpr auto kSZ = L"sz"; // 深圳
+constexpr auto kHK = L"rt_hk"; // 香港
+constexpr auto kMG = L"gb"; // 美国
+constexpr auto kBJ = L"bj"; // 北京
 
 const std::vector<CString> StockTypeSet{ kSH, kSZ, kHK, kMG, kBJ };
 
@@ -37,14 +37,13 @@ public:
     virtual void* GetPluginIcon() override;
 
     INT_PTR ShowStockManageDlg(CWnd* pWnd);
-    void SendStockInfoQequest();
+    void SendStockInfoRequest();
     void ShowContextMenu(CWnd* pWnd);
     void DisableUpdateCommand();
     void EnableUpdateCommand();
 
 private:
     static UINT ThreadCallback(LPVOID dwUser);
-    void ParseJsonData(std::string json_data);
     void LoadContextMenu();
     void updateItems();
 

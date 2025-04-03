@@ -53,119 +53,12 @@ UINT Stock::ThreadCallback(LPVOID dwUser)
         //禁用选项设置中的“更新”按钮
         m_instance.DisableUpdateCommand();
 
-        //std::wstring url{ L"http://ig507.com/data/time/real/" };
-        //url += g_data.m_setting_data.m_stock_code;
-        //url += L"?licence=";
-        //url += g_data.m_setting_data.m_licence;
-
-        // https://hq.sinajs.cn/list=sz002497
-        std::wstring url{ L"https://hq.sinajs.cn/list=" };
-        url += CCommon::vectorJoinString(g_data.m_setting_data.m_stock_codes, L",");
-        CString strHeaders = _T("Referer: https://finance.sina.com.cn");
-        CCommon::WriteLog(url.c_str(), g_data.m_log_path.c_str());
-
-        CString UA = _T("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36");
-
-        std::string Stock_data;
-        if (CCommon::GetURL(url, Stock_data, false, UA, strHeaders, strHeaders.GetLength()))
-        {
-            m_instance.ParseJsonData(Stock_data);
-        }
+        g_data.RequestRealtimeData();
 
         //启用选项设置中的“更新”按钮
         m_instance.EnableUpdateCommand();
     }
     return 0;
-}
-
-void Stock::ParseJsonData(std::string json_data)
-{
-    //CCommon::WriteLog(json_data.c_str(), g_data.m_log_path.c_str());
-    //LogX(L"ParseJsonData: %s", CCommon::StrToUnicode(json_data.c_str()).c_str());
-
-    g_data.ResetText();
-
-    if (json_data == "") {
-        CCommon::WriteLog("response is EMPTY!", g_data.m_log_path.c_str());
-        return;
-    }
-
-    std::vector<std::string> origin_arr = CCommon::split(json_data, "var hq_str_");
-    if (origin_arr.size() < 1) {
-        CCommon::WriteLog("json is INVALID!", g_data.m_log_path.c_str());
-        return;
-    }
-
-    for (int index = 0; index < origin_arr.size(); index++)
-    {
-        std::vector<std::string> item_arr = CCommon::split(origin_arr[index], "=\"");
-        if (item_arr.size() < 2)
-        {
-            CCommon::WriteLog("json is INVALID!", g_data.m_log_path.c_str());
-            continue;
-        }
-
-        std::string key = item_arr[0];
-        std::string data = item_arr[1];
-        std::vector<std::string> data_arr = CCommon::split(data, ',');
-
-        StockInfo& StockInfo = g_data.GetStockInfo(CCommon::StrToUnicode(key.c_str()));
-
-        int data_size = static_cast<int> (data_arr.size());
-
-        CString name;
-        float now = -1;
-        float yesterday = -1;
-        if (key.find(kMG) == 0)
-        {
-            if (data_size != 35) {
-                CCommon::WriteLog("data is INVALID!", g_data.m_log_path.c_str());
-                continue;
-            }
-            name = data_arr[0].c_str();
-            now = { convert<float>(data_arr[1]) };
-            yesterday = { convert<float>(data_arr[26]) };
-        }
-        else if (key.find(kHK) == 0) 
-        {
-            if (data_size != 25) {
-                CCommon::WriteLog("data is INVALID!", g_data.m_log_path.c_str());
-                continue;
-            }
-            name = data_arr[1].c_str();
-            now = { convert<float>(data_arr[6]) };
-            yesterday = { convert<float>(data_arr[3]) };
-        }
-        else if (key.find(kBJ) == 0)
-        {
-            if (data_size != 39) {
-                CCommon::WriteLog("data is INVALID!", g_data.m_log_path.c_str());
-                continue;
-            }
-            name = data_arr[0].c_str();
-            now = { convert<float>(data_arr[3]) };
-            yesterday = { convert<float>(data_arr[2]) };
-        }
-        else // key.find(kSH) != -1 || key.find(kSZ) != -1
-        {
-            if (data_size != 33 && data_size != 34) {
-                CCommon::WriteLog("data is INVALID!", g_data.m_log_path.c_str());
-                continue;
-            }
-            name = data_arr[0].c_str();
-            now = { convert<float>(data_arr[3]) };
-            yesterday = { convert<float>(data_arr[2]) };
-        }
-
-        char buff[32];
-        sprintf_s(buff, "%.2f", now);
-        StockInfo.p = CCommon::StrToUnicode(buff);
-
-        sprintf_s(buff, "%.2f%%", ((now - yesterday) / yesterday * 100));
-        StockInfo.pc = CCommon::StrToUnicode(buff);
-
-        StockInfo.name = name;
-    }
 }
 
 void Stock::LoadContextMenu()
@@ -200,7 +93,7 @@ void Stock::DataRequired()
     time_t cur_time = time(nullptr);
     if (cur_time - m_instance.m_last_request_time > 3) {
         last_req_time = cur_time;
-        SendStockInfoQequest();
+        SendStockInfoRequest();
     }
 }
 
@@ -215,9 +108,8 @@ ITMPlugin::OptionReturn Stock::ShowOptionsDialog(void* hParent)
     return ITMPlugin::OR_OPTION_UNCHANGED;
 }
 
-const wchar_t* Stock::GetInfo(PluginInfoIndex index)
+const wchar_t *Stock::GetInfo(PluginInfoIndex index)
 {
-    static CString str;
     switch (index)
     {
     case TMI_NAME:
@@ -227,9 +119,15 @@ const wchar_t* Stock::GetInfo(PluginInfoIndex index)
     case TMI_AUTHOR:
         return L"CListery";
     case TMI_COPYRIGHT:
-        return L"Copyright (C) by CListery 2022";
+    {
+        static std::wstring copyright;
+        SYSTEMTIME now_time;
+        GetLocalTime(&now_time);
+        copyright = L"Copyright © 2022-" + std::to_wstring(now_time.wYear) + L" CListery. All rights reserved.";
+        return copyright.c_str();
+    }
     case ITMPlugin::TMI_URL:
-        return L"https://github.com/zhongyang219/TrafficMonitorPlugins";
+        return L"https://github.com/CListery/TrafficMonitorPlugins";
     case TMI_VERSION:
         return L"1.13";
     default:
@@ -275,7 +173,7 @@ void Stock::OnPluginCommand(int command_index, void* hWnd, void* para)
     switch (command_index)
     {
     case 0:
-        SendStockInfoQequest();
+        SendStockInfoRequest();
         break;
     }
 }
@@ -320,7 +218,7 @@ INT_PTR Stock::ShowStockManageDlg(CWnd* pWnd)
     return rtn;
 }
 
-void Stock::SendStockInfoQequest()
+void Stock::SendStockInfoRequest()
 {
     if (!m_is_thread_runing)    //确保线程已退出
         AfxBeginThread(ThreadCallback, nullptr);
@@ -343,7 +241,7 @@ void Stock::ShowContextMenu(CWnd* pWnd)
         //点击了“更新”
         else if (id == ID_UPDATE)
         {
-            SendStockInfoQequest();
+            SendStockInfoRequest();
         }
     }
 }
