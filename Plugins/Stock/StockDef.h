@@ -152,8 +152,8 @@ namespace STOCK
   // 股票基础信息
   struct StockInfo
   {
-    std::wstring code;              // 股票代码
-    std::wstring displayName = L""; // 股票名称
+    std::wstring code;        // 股票代码
+    std::wstring displayName; // 股票名称
     // std::string industry; // 所属行业
   };
 

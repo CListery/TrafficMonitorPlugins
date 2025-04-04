@@ -127,11 +127,6 @@ int StockItem::OnMouseEvent(MouseEventType type, int x, int y, void *hWnd, int f
 {
     CWnd *pWnd = CWnd::FromHandle((HWND)hWnd);
     LogX(L"OnMouseEvent: %d", type);
-    if (type == IPluginItem::MT_RCLICKED)
-    {
-        Stock::Instance().ShowContextMenu(pWnd);
-        return 1;
-    }
     switch (type)
     {
     case IPluginItem::MT_RCLICKED:
