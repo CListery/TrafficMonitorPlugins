@@ -17,7 +17,7 @@ namespace STOCK
   using Volume = long long;
   // 金额
   using Amount = double;
-  // using TimePoint = std::chrono::time_point<std::chrono::system_clock>;
+  using TimePoint = std::chrono::time_point<std::chrono::system_clock>;
   // using TimePoint = long long;
   // using Duration = std::chrono::duration<std::chrono::system_clock>;
 
@@ -72,17 +72,17 @@ namespace STOCK
     void LoadHK(std::vector<std::string> data, size_t size);
   };
 
-  // // 分时数据点
-  // struct TimelinePoint
-  // {
-  //   TimePoint time;     // 时间点
-  //   Volume volume;      // 成交量
-  //   Price price;        // 价格
-  //   Price averagePrice; // 均价
+  // 分时数据点
+  struct TimelinePoint
+  {
+    TimePoint time;     // 时间点
+    Volume volume;      // 成交量
+    Price price;        // 价格
+    Price averagePrice; // 均价
 
-  //   TimelinePoint() : volume(0), price(0.0), averagePrice(0.0) {}
-  //   TimelinePoint(const TimePoint &time, Volume vol, Price p, Price avg) : time(time), volume(vol), price(p), averagePrice(avg) {}
-  // };
+    TimelinePoint() : volume(0), price(0.0), averagePrice(0.0) {}
+    TimelinePoint(const TimePoint &time, Volume vol, Price p, Price avg) : time(time), volume(vol), price(p), averagePrice(avg) {}
+  };
 
   // // K线数据点
   // struct KLinePoint
@@ -104,39 +104,39 @@ namespace STOCK
   // };
 
   // 定义不同的数据周期
-  // enum class Period
-  // {
-  //   TIMELINE, // 分时
-  //   MIN1,     // 1分钟
-  //   MIN5,     // 5分钟
-  //   MIN15,    // 15分钟
-  //   MIN30,    // 30分钟
-  //   HOUR1,    // 1小时
-  //   DAY,      // 日线
-  //   WEEK,     // 周线
-  //   MONTH,    // 月线
-  //   YEAR      // 年线
-  // };
+  enum class Period
+  {
+    TIMELINE, // 分时
+    MIN1,     // 1分钟
+    MIN5,     // 5分钟
+    MIN15,    // 15分钟
+    MIN30,    // 30分钟
+    HOUR1,    // 1小时
+    DAY,      // 日线
+    WEEK,     // 周线
+    MONTH,    // 月线
+    YEAR      // 年线
+  };
 
-  // // 历史数据基类
-  // class HistoricalDataBase
-  // {
-  // public:
-  //   virtual ~HistoricalDataBase() = default;
-  //   virtual Period GetPeriod() const = 0;
-  //   virtual TimePoint GetStartTime() const = 0;
-  //   virtual TimePoint GetEndTime() const = 0;
-  // };
+  // 历史数据基类
+  class HistoricalDataBase
+  {
+  public:
+    virtual ~HistoricalDataBase() = default;
+    virtual Period GetPeriod() const = 0;
+    virtual TimePoint GetStartTime() const = 0;
+    virtual TimePoint GetEndTime() const = 0;
+  };
 
-  // // 分时历史数据
-  // class TimelineData : public HistoricalDataBase
-  // {
-  // public:
-  //   Period GetPeriod() const override { return Period::TIMELINE; }
-  //   std::vector<TimelinePoint> data;
-  //   TimePoint GetStartTime() const override { return data.front().time; }
-  //   TimePoint GetEndTime() const override { return data.back().time; }
-  // };
+  // 分时历史数据
+  class TimelineData : public HistoricalDataBase
+  {
+  public:
+    Period GetPeriod() const override { return Period::TIMELINE; }
+    std::vector<TimelinePoint> data;
+    TimePoint GetStartTime() const override { return data.front().time; }
+    TimePoint GetEndTime() const override { return data.back().time; }
+  };
 
   // // K线历史数据
   // class KLineData : public HistoricalDataBase
@@ -167,37 +167,36 @@ namespace STOCK
     std::wstring GetCurrentDisplay(bool include_name = true) const;
 
     // 使用智能指针管理历史数据
-    // std::map<Period, std::shared_ptr<HistoricalDataBase>> historicalData;
+    std::map<Period, std::shared_ptr<HistoricalDataBase>> historicalData;
 
-    // template <typename T>
-    // std::shared_ptr<T> MakesureHistoricalData(Period period)
-    // {
-    //   auto it = historicalData.find(period);
-    //   if (it != historicalData.end())
-    //   {
-    //     auto _data = std::dynamic_pointer_cast<T>(it->second);
-    //     if (_data)
-    //     {
-    //       return _data;
-    //     }
-    //   }
-    //   const std::vector<T> data;
-    //   auto _data = std::make_shared<T>(data);
-    //   historicalData[period] = _data;
-    //   return _data;
-    // }
+    template <typename T>
+    std::shared_ptr<T> MakesureHistoricalData(Period period)
+    {
+      auto it = historicalData.find(period);
+      if (it != historicalData.end())
+      {
+        auto _data = std::dynamic_pointer_cast<T>(it->second);
+        if (_data)
+        {
+          return _data;
+        }
+      }
+      auto _data = std::make_shared<T>();
+      historicalData[period] = _data;
+      return _data;
+    }
 
-    // // 添加分时数据点
-    // bool addTimelinePoint(const TimelinePoint &point)
-    // {
-    //   MakesureHistoricalData<TimelineData>(Period::TIMELINE)->data.push_back(point);
-    // }
+    // 添加分时数据点
+    void addTimelinePoint(const TimelinePoint &point)
+    {
+      MakesureHistoricalData<TimelineData>(Period::TIMELINE)->data.push_back(point);
+    }
 
-    // // 获取分时走势数据
-    // std::vector<TimelinePoint> &getTimeline()
-    // {
-    //   return MakesureHistoricalData<TimelineData>(Period::TIMELINE)->data;
-    // }
+    // 获取分时走势数据
+    std::vector<TimelinePoint> &getTimeline()
+    {
+      return MakesureHistoricalData<TimelineData>(Period::TIMELINE)->data;
+    }
   };
 
   // 股票市场类，管理多个股票
@@ -248,15 +247,15 @@ namespace STOCK
       }
     }
 
-    // // 添加分时数据
-    // void addTimelinePoint(const std::string &code, const TimelinePoint &point)
-    // {
-    //   auto stock = getStock(code);
-    //   if (stock)
-    //   {
-    //     stock->addTimelinePoint(point);
-    //   }
-    // }
+    // 添加分时数据
+    void addTimelinePoint(const std::wstring &code, const TimelinePoint &point)
+    {
+      auto stock = getStock(code);
+      if (stock)
+      {
+        stock->addTimelinePoint(point);
+      }
+    }
   };
 
   // 数据更新接口

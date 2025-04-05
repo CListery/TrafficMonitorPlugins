@@ -37,6 +37,10 @@ void STOCK::StockMarket::LoadRealtimeDataByJson(std::string json)
 
   for (std::string line : lines)
   {
+    if (line.empty())
+    {
+      continue;
+    }
     line = CCommon::removeChar(CCommon::removeStr(line, "var hq_str_"), '\"');
 
     std::vector<std::string> item_arr = CCommon::split(line, '=');
@@ -52,7 +56,7 @@ void STOCK::StockMarket::LoadRealtimeDataByJson(std::string json)
 
     if (item_arr.size() < 2)
     {
-      stockData->info.displayName = L"获取失败: " + stockData->info.code;
+      stockData->info.displayName = stockData->info.code + L" 获取失败";
 
       CCommon::WriteLog("json is INVALID!", g_data.m_log_path.c_str());
       continue;

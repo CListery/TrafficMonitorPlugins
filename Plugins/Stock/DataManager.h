@@ -47,6 +47,7 @@ public:
 
     // 获取最新数据
     void RequestRealtimeData();
+    void RequestTimelineData();
 
     SettingData m_setting_data;
     std::wstring m_log_path;

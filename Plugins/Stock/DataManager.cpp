@@ -163,3 +163,23 @@ void CDataManager::RequestRealtimeData()
         stockMarket.LoadRealtimeDataByJson(Stock_data);
     }
 }
+
+void CDataManager::RequestTimelineData()
+{
+    // std::vector<std::wstring> codes = m_setting_data.m_stock_codes;
+    // // https://hq.sinajs.cn/?_=0.1155744778269292&list=sz002497
+    // std::wstring url{L"https://hq.sinajs.cn/?"};
+    // std::vector<std::wstring> params;
+    // params.push_back(L"_=" + std::to_wstring(generateRandomDouble()));
+    // params.push_back(L"list=" + CCommon::vectorJoinString(codes, L","));
+
+    // url += CCommon::vectorJoinString(params, L"&");
+    // CString strHeaders = _T("Referer: https://finance.sina.com.cn");
+    // CCommon::WriteLog(url.c_str(), g_data.m_log_path.c_str());
+
+    // std::string Stock_data;
+    // if (CCommon::GetURL(url, Stock_data, false, WEB_USERAGENT, strHeaders, strHeaders.GetLength()))
+    // {
+    //     stockMarket.LoadRealtimeDataByJson(Stock_data);
+    // }
+}

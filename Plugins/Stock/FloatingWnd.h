@@ -22,7 +22,7 @@ public:
     CFloatingWnd();
     virtual ~CFloatingWnd();
 
-    BOOL Create(CPoint pt);
+    BOOL Create(CPoint pt, std::wstring stock_id);
 
 protected:
     DECLARE_MESSAGE_MAP()
@@ -39,6 +39,7 @@ private:
     static UINT NetworkThreadProc(LPVOID pParam); // 线程函数
 
     CTransparentWnd m_CTransparentWnd;
+    std::wstring m_stock_id;
     CString m_data;
     volatile BOOL m_isRequesting;
     volatile BOOL m_isDestroying; // 添加销毁标志

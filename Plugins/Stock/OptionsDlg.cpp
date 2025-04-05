@@ -149,7 +149,6 @@ void COptionsDlg::OnBnClickedOk()
         break;
     case 4:
         type = kMG;
-        type += L"_";
         break;
     }
     RemoveTypeFromCode(code);

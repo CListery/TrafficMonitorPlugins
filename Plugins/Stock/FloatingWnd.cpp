@@ -1,12 +1,15 @@
 ﻿#include "pch.h"
 #include "FloatingWnd.h"
-#include "pch.h"
 #include <afxinet.h>
 #include <memory>
+#include "Common.h"
+#include "DataManager.h"
 
 // 定义自定义消息
 #define WM_UPDATE_STATUS (WM_USER + 100)
 #define WM_UPDATE_DATA (WM_USER + 101)
+
+constexpr auto WEB_USERAGENT = _T("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36 Edg/135.0.0.0");
 
 BEGIN_MESSAGE_MAP(CTransparentWnd, CWnd)
 ON_WM_LBUTTONDOWN()
@@ -81,8 +84,9 @@ CFloatingWnd::~CFloatingWnd()
         m_CTransparentWnd.DestroyWindow();
 }
 
-BOOL CFloatingWnd::Create(CPoint pt)
+BOOL CFloatingWnd::Create(CPoint pt, std::wstring stock_id)
 {
+    m_stock_id = stock_id;
     // 注册窗口类
     WNDCLASS wndcls;
     HINSTANCE hInst = AfxGetInstanceHandle();
@@ -107,14 +111,14 @@ BOOL CFloatingWnd::Create(CPoint pt)
 
     // 获取包含鼠标点的显示器
     HMONITOR hMonitor = MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST);
-    MONITORINFO mi = { sizeof(MONITORINFO) };
+    MONITORINFO mi = {sizeof(MONITORINFO)};
     GetMonitorInfo(hMonitor, &mi);
-    CRect screenRect = mi.rcWork;  // 工作区域
+    CRect screenRect = mi.rcWork; // 工作区域
 
     // 创建透明全屏窗口
     if (!m_CTransparentWnd.CreateEx(WS_EX_TOOLWINDOW /* | WS_EX_LAYERED */ /* | WS_EX_TRANSPARENT */,
-                                   L"CTransparentWnd", L"", WS_POPUP | WS_VISIBLE,
-                                   screenRect, NULL, 0, NULL))
+                                    L"CTransparentWnd", L"", WS_POPUP | WS_VISIBLE,
+                                    screenRect, NULL, 0, NULL))
     {
         TRACE(L"Failed to create transparent window\n");
         return FALSE;
@@ -176,8 +180,8 @@ void CFloatingWnd::OnPaint()
 
     // 绘制内容
     memDC.SetBkMode(TRANSPARENT);
-    memDC.TextOut(10, 10, L"这是一个测试文本");
-    // memDC.TextOut(10, 10, m_isRequesting ? L"Loading..." : m_data);
+    // memDC.TextOut(10, 10, L"这是一个测试文本");
+    memDC.TextOut(10, 10, m_isRequesting ? L"Loading..." : m_data);
 
     // 复制到屏幕
     dc.BitBlt(0, 0, rect.Width(), rect.Height(), &memDC, 0, 0, SRCCOPY);
@@ -216,9 +220,24 @@ UINT CFloatingWnd::NetworkThreadProc(LPVOID pParam)
             return 0;
         }
 
-        CInternetSession session;
-        CHttpConnection *pConnection = session.GetHttpConnection(L"api.example.com");
-        CHttpFile *pFile = pConnection->OpenRequest(CHttpConnection::HTTP_VERB_GET, L"/api/data");
+        std::wstring url{L"https://cn.finance.sina.com.cn/minline/getMinlineData?"};
+        // https://cn.finance.sina.com.cn/minline/getMinlineData?symbol=sz000100&version=7.11.0&dpc=1
+        std::vector<std::wstring> params;
+        params.push_back(L"symbol=" + pWnd->m_stock_id);
+        params.push_back(L"version=7.11.0");
+        params.push_back(L"dpc=1");
+
+        url += CCommon::vectorJoinString(params, L"&");
+        CCommon::WriteLog(url.c_str(), g_data.m_log_path.c_str());
+
+        // CString strHeaders = L"Referer: https://finance.sina.com.cn/realstock/company/" + m_stock_id + L"/nc.shtml";
+        std::wstring strHeaders{L"Referer: https://finance.sina.com.cn/realstock/company/"};
+        strHeaders += pWnd->m_stock_id;
+        strHeaders += L"/nc.shtml";
+        CString headers = strHeaders.c_str();
+
+        CInternetSession *session = new CInternetSession(WEB_USERAGENT);
+        CHttpFile *pFile = (CHttpFile *)session->OpenURL(url.c_str(), 1, INTERNET_FLAG_TRANSFER_ASCII, headers, headers.GetLength());
 
         // 检查窗口是否有效
         if (pWnd->m_isDestroying)
@@ -226,7 +245,7 @@ UINT CFloatingWnd::NetworkThreadProc(LPVOID pParam)
             return 0;
         }
 
-        pFile->SendRequest();
+        // pFile->SendRequest();
 
         DWORD dwStatusCode;
         pFile->QueryInfoStatusCode(dwStatusCode);
@@ -253,9 +272,7 @@ UINT CFloatingWnd::NetworkThreadProc(LPVOID pParam)
         // 清理资源
         pFile->Close();
         delete pFile;
-        pConnection->Close();
-        delete pConnection;
-        session.Close();
+        session->Close();
     }
     catch (CInternetException *e)
     {

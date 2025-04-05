@@ -97,6 +97,8 @@
     "stack": "cpp",
     "filesystem": "cpp",
     "xutility": "cpp",
-    "xstring": "cpp"
+    "xstring": "cpp",
+    "format": "cpp",
+    "xlocinfo": "cpp"
   }
 }

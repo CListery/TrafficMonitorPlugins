@@ -149,7 +149,7 @@ int StockItem::OnMouseEvent(MouseEventType type, int x, int y, void *hWnd, int f
         // 创建新的悬浮窗
         m_pFloatingWnd = new CFloatingWnd;
         // if (!m_pFloatingWnd->Create(ptScreen))
-        if (!m_pFloatingWnd->Create(ptScreen))
+        if (!m_pFloatingWnd->Create(ptScreen, stock_id))
         {
             delete m_pFloatingWnd;
             m_pFloatingWnd = NULL;
