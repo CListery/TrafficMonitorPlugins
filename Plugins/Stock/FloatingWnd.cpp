@@ -11,12 +11,6 @@
 
 constexpr auto WEB_USERAGENT = _T("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36 Edg/135.0.0.0");
 
-BEGIN_MESSAGE_MAP(CTransparentWnd, CWnd)
-ON_WM_LBUTTONDOWN()
-ON_WM_ERASEBKGND()
-ON_WM_CREATE()
-END_MESSAGE_MAP()
-
 BEGIN_MESSAGE_MAP(CFloatingWnd, CWnd)
 ON_WM_PAINT()
 ON_WM_ERASEBKGND()
@@ -26,16 +20,6 @@ ON_WM_CREATE()
 ON_MESSAGE(WM_UPDATE_STATUS, OnUpdateStatus)
 ON_MESSAGE(WM_UPDATE_DATA, OnUpdateData)
 END_MESSAGE_MAP()
-
-int CTransparentWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
-{
-    if (CWnd::OnCreate(lpCreateStruct) == -1)
-        return -1;
-
-    // 添加调试输出
-    TRACE(L"CTransparentWnd Created\n");
-    return 0;
-}
 
 int CFloatingWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
@@ -67,10 +51,6 @@ LRESULT CFloatingWnd::OnUpdateData(WPARAM wParam, LPARAM lParam)
         Invalidate();
     }
     return 0;
-}
-
-CTransparentWnd::CTransparentWnd() : m_pParent(nullptr)
-{
 }
 
 CFloatingWnd::CFloatingWnd()
@@ -401,42 +381,4 @@ UINT CFloatingWnd::NetworkThreadProc(LPVOID pParam)
     }
 
     return 0;
-}
-
-void CTransparentWnd::OnLButtonDown(UINT nFlags, CPoint point)
-{
-    // 添加调试输出
-    TRACE(L"CTransparentWnd OnLButtonDown\n");
-
-    // 获取鼠标位置
-    CPoint ptScreen;
-    GetCursorPos(&ptScreen);
-
-    // 获取浮动窗口区域
-    CRect rcFloat;
-    if (m_pParent && m_pParent->GetSafeHwnd())
-    {
-        m_pParent->GetWindowRect(rcFloat);
-        if (!rcFloat.PtInRect(ptScreen))
-        {
-            TRACE(L"Destroying floating window\n");
-            m_pParent->DestroyWindow();
-            DestroyWindow();
-        }
-        else
-        {
-            // 如果点击在浮动窗口内部，将消息传递给浮动窗口
-            m_pParent->SendMessage(WM_LBUTTONDOWN, nFlags, MAKELPARAM(point.x, point.y));
-        }
-    }
-    // else
-    // {
-    //     TRACE(L"Destroying transparent window\n");
-    //     DestroyWindow();
-    // }
-}
-
-BOOL CTransparentWnd::OnEraseBkgnd(CDC *pDC)
-{
-    return TRUE; // 不擦除背景
 }

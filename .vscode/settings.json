@@ -101,6 +101,20 @@
     "format": "cpp",
     "xlocinfo": "cpp",
     "*.def": "cpp",
-    "__functional_base_03": "cpp"
+    "__functional_base_03": "cpp",
+    "charconv": "cpp",
+    "forward_list": "cpp",
+    "xfacet": "cpp",
+    "xiosbase": "cpp",
+    "xlocale": "cpp",
+    "xlocbuf": "cpp",
+    "xlocmes": "cpp",
+    "xlocmon": "cpp",
+    "xlocnum": "cpp",
+    "xloctime": "cpp",
+    "xmemory": "cpp",
+    "xstddef": "cpp",
+    "xtr1common": "cpp",
+    "xtree": "cpp"
   }
 }
