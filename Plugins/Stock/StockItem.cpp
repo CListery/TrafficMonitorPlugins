@@ -31,7 +31,7 @@ const wchar_t *StockItem::GetItemLableText() const
 
 const wchar_t *StockItem::GetItemValueText() const
 {
-    auto data = g_data.GetStockInfo(stock_id);
+    auto data = g_data.GetStockData(stock_id);
     static std::wstring current;
     current = data->GetCurrentDisplay();
     return current.c_str();
@@ -44,7 +44,7 @@ bool StockItem::IsCustomDraw() const
 int StockItem::GetItemWidthEx(void *hDC) const
 {
     CDC *pDC = CDC::FromHandle((HDC)hDC);
-    return std::max(pDC->GetTextExtent(g_data.GetStockInfo(stock_id)->GetCurrentDisplay().c_str()).cx, pDC->GetTextExtent(GetItemValueSampleText()).cx);
+    return std::max(pDC->GetTextExtent(g_data.GetStockData(stock_id)->GetCurrentDisplay().c_str()).cx, pDC->GetTextExtent(GetItemValueSampleText()).cx);
 }
 
 void StockItem::DrawItem(void *hDC, int x, int y, int w, int h, bool dark_mode)
@@ -52,28 +52,8 @@ void StockItem::DrawItem(void *hDC, int x, int y, int w, int h, bool dark_mode)
     // 绘图句柄
     CDC *pDC = CDC::FromHandle((HDC)hDC);
 
-    // 基本绘图示例
-    CPen pen(PS_SOLID, 1, RGB(255, 0, 0));
-    CPen *pOldPen = pDC->SelectObject(&pen);
-
-    std::vector<CPoint> dataPoints;
-
-    dataPoints.push_back(CPoint(x, y));
-    dataPoints.push_back(CPoint(x + 5, y + 5));
-    dataPoints.push_back(CPoint(x + 10, y - 5));
-    dataPoints.push_back(CPoint(x + 15, y + 10));
-
-    // 绘制折线
-    pDC->MoveTo(x, y + h / 2);
-    for (int i = 0; i < dataPoints.size(); i++)
-    {
-        pDC->LineTo(dataPoints[i].x, dataPoints[i].y + h / 2);
-    }
-
-    pDC->SelectObject(pOldPen);
-
     // 矩形区域
-    auto data = g_data.GetStockInfo(stock_id);
+    auto data = g_data.GetStockData(stock_id);
     CRect rect(CPoint(x, y), CSize(w, h));
 
     // 文本颜色
@@ -135,26 +115,11 @@ int StockItem::OnMouseEvent(MouseEventType type, int x, int y, void *hWnd, int f
 
     case IPluginItem::MT_LCLICKED:
     {
-        // 如果已有悬浮窗，先销毁
-        if (m_pFloatingWnd != NULL)
-        {
-            m_pFloatingWnd->DestroyWindow();
-            delete m_pFloatingWnd;
-            m_pFloatingWnd = NULL;
+        if (stock_id.find(kSZ) == 0 || stock_id.find(kBJ) == 0 || stock_id.find(kSH) == 0) {
+            CPoint ptScreen = CPoint(x, y);
+            Stock::Instance().ShowFloatingWnd(hWnd, ptScreen, stock_id);
+            return 1;
         }
-
-        CPoint ptScreen = CPoint(x, y);
-        ClientToScreen((HWND)hWnd, &ptScreen);
-
-        // 创建新的悬浮窗
-        m_pFloatingWnd = new CFloatingWnd;
-        // if (!m_pFloatingWnd->Create(ptScreen))
-        if (!m_pFloatingWnd->Create(ptScreen, stock_id))
-        {
-            delete m_pFloatingWnd;
-            m_pFloatingWnd = NULL;
-        }
-        return 1;
     }
     default:
         break;

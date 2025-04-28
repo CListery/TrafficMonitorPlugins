@@ -42,6 +42,8 @@ public:
     void DisableUpdateCommand();
     void EnableUpdateCommand();
 
+    void ShowFloatingWnd(void* hWnd, CPoint ptScreen, std::wstring stock_id);
+
 private:
     static UINT ThreadCallback(LPVOID dwUser);
     void LoadContextMenu();
@@ -56,6 +58,7 @@ private:
     CManagerDialog* m_option_dlg{};      //保存选项设置对话框的句柄
     unsigned __int64 m_last_request_time{}; //上次请求的时间
     CMenu m_menu;
+    CFloatingWnd* m_pFloatingWnd;
 };
 
 #ifdef __cplusplus

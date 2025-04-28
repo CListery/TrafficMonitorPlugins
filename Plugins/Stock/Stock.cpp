@@ -17,7 +17,7 @@ Stock::Stock()
     }
 }
 
-Stock& Stock::Instance()
+Stock &Stock::Instance()
 {
     return m_instance;
 }
@@ -27,8 +27,9 @@ UINT Stock::ThreadCallback(LPVOID dwUser)
     AFX_MANAGE_STATE(AfxGetStaticModuleState());
     CFlagLocker flag_locker(m_instance.m_is_thread_runing);
 
-    if (g_data.m_setting_data.m_stock_codes.empty()) {
-        //CCommon::WriteLog(L"Stock_code not setting!", g_data.m_log_path.c_str());
+    if (g_data.m_setting_data.m_stock_codes.empty())
+    {
+        // CCommon::WriteLog(L"Stock_code not setting!", g_data.m_log_path.c_str());
         g_data.ResetText();
         return 0;
     }
@@ -38,24 +39,26 @@ UINT Stock::ThreadCallback(LPVOID dwUser)
     {
         m_instance.m_last_request_time = cur_time;
 
-        if (g_data.m_setting_data.m_full_day != 1) {
+        if (g_data.m_setting_data.m_full_day != 1)
+        {
             SYSTEMTIME now_time;
             GetLocalTime(&now_time);
-            //CCommon::WriteLog(now_time.wHour, g_data.m_log_path.c_str());
-            //CCommon::WriteLog(now_time.wMinute, g_data.m_log_path.c_str());
-            if (now_time.wHour < 9 || now_time.wHour > 15 || (now_time.wHour == 15 && now_time.wMinute > 30)) {
+            // CCommon::WriteLog(now_time.wHour, g_data.m_log_path.c_str());
+            // CCommon::WriteLog(now_time.wMinute, g_data.m_log_path.c_str());
+            if (now_time.wHour < 9 || now_time.wHour > 15 || (now_time.wHour == 15 && now_time.wMinute > 30))
+            {
                 CCommon::WriteLog(L"Not currently in trading time!", g_data.m_log_path.c_str());
                 g_data.ResetText();
                 return 0;
             }
         }
 
-        //禁用选项设置中的“更新”按钮
+        // 禁用选项设置中的“更新”按钮
         m_instance.DisableUpdateCommand();
 
         g_data.RequestRealtimeData();
 
-        //启用选项设置中的“更新”按钮
+        // 启用选项设置中的“更新”按钮
         m_instance.EnableUpdateCommand();
     }
     return 0;
@@ -70,7 +73,7 @@ void Stock::LoadContextMenu()
     }
 }
 
-IPluginItem* Stock::GetItem(int index)
+IPluginItem *Stock::GetItem(int index)
 {
     size_t item_size = m_items.size();
     if (g_data.m_setting_data.m_stock_codes.size() < item_size)
@@ -82,25 +85,26 @@ IPluginItem* Stock::GetItem(int index)
     return &(m_items[index]);
 }
 
-const wchar_t* Stock::GetTooltipInfo()
+const wchar_t *Stock::GetTooltipInfo()
 {
     return m_tooltop_info.c_str();
 }
 
 void Stock::DataRequired()
 {
-    static time_t last_req_time{ -1 };
+    static time_t last_req_time{-1};
     time_t cur_time = time(nullptr);
-    if (cur_time - m_instance.m_last_request_time > 3) {
+    if (cur_time - m_instance.m_last_request_time > 3)
+    {
         last_req_time = cur_time;
         SendStockInfoRequest();
     }
 }
 
-ITMPlugin::OptionReturn Stock::ShowOptionsDialog(void* hParent)
+ITMPlugin::OptionReturn Stock::ShowOptionsDialog(void *hParent)
 {
     AFX_MANAGE_STATE(AfxGetStaticModuleState());
-    CWnd* pParent = CWnd::FromHandle((HWND)hParent);
+    CWnd *pParent = CWnd::FromHandle((HWND)hParent);
     if (ShowStockManageDlg(pParent) == IDOK)
     {
         return ITMPlugin::OR_OPTION_CHANGED;
@@ -136,17 +140,17 @@ const wchar_t *Stock::GetInfo(PluginInfoIndex index)
     return L"";
 }
 
-void Stock::OnExtenedInfo(ExtendedInfoIndex index, const wchar_t* data)
+void Stock::OnExtenedInfo(ExtendedInfoIndex index, const wchar_t *data)
 {
     switch (index)
     {
     case ITMPlugin::EI_CONFIG_DIR:
-        //从配置文件读取配置
+        // 从配置文件读取配置
         g_data.LoadConfig(std::wstring(data));
         updateItems();
         break;
     case ITMPlugin::EI_TASKBAR_WND_VALUE_RIGHT_ALIGN:
-        //获取TrafficMonitor任务栏窗口中“数值右对齐”设置
+        // 获取TrafficMonitor任务栏窗口中“数值右对齐”设置
         g_data.m_right_align = (_wtoi(data) != 0);
         break;
     default:
@@ -159,16 +163,17 @@ int Stock::GetCommandCount()
     return 1;
 }
 
-const wchar_t* Stock::GetCommandName(int command_index)
+const wchar_t *Stock::GetCommandName(int command_index)
 {
     switch (command_index)
     {
-    case 0: return g_data.StringRes(IDS_MENU_UPDATE_STOCK).GetString();
+    case 0:
+        return g_data.StringRes(IDS_MENU_UPDATE_STOCK).GetString();
     }
     return nullptr;
 }
 
-void Stock::OnPluginCommand(int command_index, void* hWnd, void* para)
+void Stock::OnPluginCommand(int command_index, void *hWnd, void *para)
 {
     switch (command_index)
     {
@@ -178,7 +183,7 @@ void Stock::OnPluginCommand(int command_index, void* hWnd, void* para)
     }
 }
 
-void* Stock::GetPluginIcon()
+void *Stock::GetPluginIcon()
 {
     return g_data.GetIcon(IDI_STOCK);
 }
@@ -201,7 +206,7 @@ void Stock::updateItems()
     }
 }
 
-INT_PTR Stock::ShowStockManageDlg(CWnd* pWnd)
+INT_PTR Stock::ShowStockManageDlg(CWnd *pWnd)
 {
     AFX_MANAGE_STATE(AfxGetStaticModuleState());
     CManagerDialog dlg(pWnd);
@@ -220,25 +225,25 @@ INT_PTR Stock::ShowStockManageDlg(CWnd* pWnd)
 
 void Stock::SendStockInfoRequest()
 {
-    if (!m_is_thread_runing)    //确保线程已退出
+    if (!m_is_thread_runing) // 确保线程已退出
         AfxBeginThread(ThreadCallback, nullptr);
 }
 
-void Stock::ShowContextMenu(CWnd* pWnd)
+void Stock::ShowContextMenu(CWnd *pWnd)
 {
     LoadContextMenu();
-    CMenu* context_menu = m_menu.GetSubMenu(0);
+    CMenu *context_menu = m_menu.GetSubMenu(0);
     if (context_menu != nullptr)
     {
         CPoint point1;
         GetCursorPos(&point1);
         DWORD id = context_menu->TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, point1.x, point1.y, pWnd);
-        //点击了“管理”
+        // 点击了“管理”
         if (id == ID_OPTIONS)
         {
             ShowStockManageDlg(pWnd);
         }
-        //点击了“更新”
+        // 点击了“更新”
         else if (id == ID_UPDATE)
         {
             SendStockInfoRequest();
@@ -246,23 +251,48 @@ void Stock::ShowContextMenu(CWnd* pWnd)
     }
 }
 
+void Stock::ShowFloatingWnd(void* hWnd, CPoint ptScreen, std::wstring stock_id)
+{
+    // 如果已有悬浮窗，先销毁
+    if (m_pFloatingWnd != NULL)
+    {
+        m_pFloatingWnd->DestroyWindow();
+        delete m_pFloatingWnd;
+        m_pFloatingWnd = NULL;
+    }
+
+    ClientToScreen((HWND)hWnd, &ptScreen);
+
+    CWnd* pWnd = CWnd::FromHandle((HWND)hWnd);
+
+    CFont * font = pWnd->GetParent()->GetFont();
+
+    // 创建新的悬浮窗
+    m_pFloatingWnd = new CFloatingWnd;
+    if (!m_pFloatingWnd->Create(font, ptScreen, stock_id))
+    {
+        delete m_pFloatingWnd;
+        m_pFloatingWnd = NULL;
+    }
+}
+
 void Stock::DisableUpdateCommand()
 {
-    //if (m_option_dlg != nullptr)
-    //    m_option_dlg->EnableUpdateBtn(false);
+    // if (m_option_dlg != nullptr)
+    //     m_option_dlg->EnableUpdateBtn(false);
     if (m_menu.m_hMenu != NULL)
         m_menu.EnableMenuItem(ID_UPDATE, MF_BYCOMMAND | MF_GRAYED);
 }
 
 void Stock::EnableUpdateCommand()
 {
-    //if (m_instance.m_option_dlg != nullptr)
-    //    m_instance.m_option_dlg->EnableUpdateBtn(true);
+    // if (m_instance.m_option_dlg != nullptr)
+    //     m_instance.m_option_dlg->EnableUpdateBtn(true);
     if (m_menu.m_hMenu != NULL)
         m_menu.EnableMenuItem(ID_UPDATE, MF_BYCOMMAND | MF_ENABLED);
 }
 
-ITMPlugin* TMPluginGetInstance()
+ITMPlugin *TMPluginGetInstance()
 {
     AFX_MANAGE_STATE(AfxGetStaticModuleState());
     return &Stock::Instance();

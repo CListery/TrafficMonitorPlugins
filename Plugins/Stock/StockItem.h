@@ -19,9 +19,6 @@ public:
     std::wstring stock_id;
     bool enable;
 
-protected:
-    CFloatingWnd* m_pFloatingWnd;
-
 private:
     void requestMinlineData();
 };

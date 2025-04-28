@@ -17,7 +17,7 @@ namespace STOCK
   using Volume = long long;
   // 金额
   using Amount = double;
-  using TimePoint = std::chrono::time_point<std::chrono::system_clock>;
+  using TimePoint = std::string;
   // using TimePoint = long long;
   // using Duration = std::chrono::duration<std::chrono::system_clock>;
 
@@ -44,6 +44,8 @@ namespace STOCK
 
     std::wstring displayPrice = L"--";
     std::wstring displayFluctuation = L"--%";
+
+    Price priceLimit; // 价格限制
 
     // 买卖盘口，使用数组便于遍历
     static const int MAX_LEVEL = 5;
@@ -132,10 +134,12 @@ namespace STOCK
   class TimelineData : public HistoricalDataBase
   {
   public:
-    Period GetPeriod() const override { return Period::TIMELINE; }
     std::vector<TimelinePoint> data;
-    TimePoint GetStartTime() const override { return data.front().time; }
-    TimePoint GetEndTime() const override { return data.back().time; }
+    TimelineData() {};
+    Period GetPeriod() const override { return Period::TIMELINE; }
+    TimePoint GetStartTime() const { return data.front().time; }
+    TimePoint GetEndTime() const { return data.back().time; }
+    void Clear() { data.clear(); }
   };
 
   // // K线历史数据
@@ -186,16 +190,25 @@ namespace STOCK
       return _data;
     }
 
+    void clearTimelinePoint()
+    {
+      auto timelineData = MakesureHistoricalData<TimelineData>(Period::TIMELINE);
+      timelineData->data.clear();
+    }
+
     // 添加分时数据点
     void addTimelinePoint(const TimelinePoint &point)
     {
-      MakesureHistoricalData<TimelineData>(Period::TIMELINE)->data.push_back(point);
+      auto timelineData = MakesureHistoricalData<TimelineData>(Period::TIMELINE);
+      timelineData->data.push_back(point);
     }
 
+    void addTimelinePoint(const CString &json_data);
+
     // 获取分时走势数据
-    std::vector<TimelinePoint> &getTimeline()
+    STOCK::TimelineData *getTimelineData()
     {
-      return MakesureHistoricalData<TimelineData>(Period::TIMELINE)->data;
+      return MakesureHistoricalData<TimelineData>(Period::TIMELINE).get();
     }
   };
 
@@ -254,6 +267,15 @@ namespace STOCK
       if (stock)
       {
         stock->addTimelinePoint(point);
+      }
+    }
+
+    void addTimelinePoint(const std::wstring &code, const CString &json_data)
+    {
+      auto stock = getStock(code);
+      if (stock)
+      {
+        stock->addTimelinePoint(json_data);
       }
     }
   };

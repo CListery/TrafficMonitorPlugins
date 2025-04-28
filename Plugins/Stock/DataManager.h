@@ -43,7 +43,7 @@ public:
     int RDPI(int pixel);
     HICON GetIcon(UINT id);
     void ResetText();
-    std::shared_ptr<StockData> GetStockInfo(const std::wstring& code);
+    std::shared_ptr<StockData> GetStockData(const std::wstring& code);
 
     // 获取最新数据
     void RequestRealtimeData();

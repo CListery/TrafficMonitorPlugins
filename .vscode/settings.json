@@ -99,6 +99,8 @@
     "xutility": "cpp",
     "xstring": "cpp",
     "format": "cpp",
-    "xlocinfo": "cpp"
+    "xlocinfo": "cpp",
+    "*.def": "cpp",
+    "__functional_base_03": "cpp"
   }
 }

@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include <StockDef.h>
+
 class CTransparentWnd : public CWnd
 {
 public:
@@ -8,6 +10,7 @@ public:
 
 protected:
     DECLARE_MESSAGE_MAP()
+    //afx_msg void OnMouseMove(UINT nFlags, CPoint point);
     afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
     afx_msg BOOL OnEraseBkgnd(CDC *pDC);
     afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
@@ -22,7 +25,7 @@ public:
     CFloatingWnd();
     virtual ~CFloatingWnd();
 
-    BOOL Create(CPoint pt, std::wstring stock_id);
+    BOOL Create(CFont* font, CPoint pt, std::wstring stock_id);
 
 protected:
     DECLARE_MESSAGE_MAP()
@@ -37,10 +40,10 @@ private:
     void PositionWindow(CPoint pt);
     void RequestData();                           // 网络请求函数
     static UINT NetworkThreadProc(LPVOID pParam); // 线程函数
+    CPoint Stock2Point(int x, int y, int w, int h, float unitY, const STOCK::TimelinePoint& item, const STOCK::Price prevClosePrice);
 
     CTransparentWnd m_CTransparentWnd;
     std::wstring m_stock_id;
-    CString m_data;
     volatile BOOL m_isRequesting;
     volatile BOOL m_isDestroying; // 添加销毁标志
 };

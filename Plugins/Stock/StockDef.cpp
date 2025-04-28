@@ -4,6 +4,9 @@
 #include "Common.h"
 #include <DataManager.h>
 #include <Stock.h>
+#include "utilities/yyjson/yyjson.h"
+#include "utilities/Common.h"
+#include "utilities/JsonHelper.h"
 
 // 美股数据长度
 constexpr auto _DATA_LEN_MG = 36;
@@ -133,6 +136,18 @@ void STOCK::RealTimeData::LoadAG(std::vector<std::string> data, size_t size)
   volume = {convert<Volume>(data[8])};
   turnover = {convert<Amount>(data[9])};
 
+  Price upperLimit = max(prevClosePrice * 1.01, highPrice) - prevClosePrice;
+  Price lowerLimit = min(prevClosePrice * 0.99, lowPrice) - prevClosePrice;
+
+  if (abs(upperLimit) > abs(lowerLimit))
+  {
+    priceLimit = upperLimit;
+  }
+  else
+  {
+    priceLimit = lowerLimit;
+  }
+
   // 设置买卖盘数据
   askLevels[4] = {{convert<Price>(data[29])}, {convert<Volume>(data[28])}};
   askLevels[3] = {{convert<Price>(data[27])}, {convert<Volume>(data[26])}};
@@ -196,4 +211,103 @@ std::wstring STOCK::StockData::GetCurrentDisplay(bool include_name) const
     wss << info.displayName << ": ";
   wss << realTimeData.displayPrice << ' ' << realTimeData.displayFluctuation;
   return wss.str();
+}
+
+static Volume GetJsonVolume(yyjson_val *obj, const char *key)
+{
+  if (obj != nullptr)
+  {
+    yyjson_val *val = yyjson_obj_get(obj, key);
+    try
+    {
+
+      if (val != nullptr)
+      {
+        if (yyjson_is_uint(val))
+        {
+          return static_cast<Volume>(yyjson_get_uint(val));
+        }
+        else if (yyjson_is_str(val))
+        {
+          return static_cast<Volume>(std::stoul(yyjson_get_str(val)));
+        }
+      }
+    }
+    catch (const std::exception &e)
+    {
+      return 0L;
+    }
+  }
+  return 0L;
+}
+
+static Price GetJsonPrice(yyjson_val *obj, const char *key)
+{
+  if (obj != nullptr)
+  {
+    yyjson_val *val = yyjson_obj_get(obj, key);
+    try
+    {
+      if (val != nullptr)
+      {
+        if (yyjson_is_real(val))
+        {
+          return static_cast<Price>(yyjson_get_real(val));
+        }
+        else if (yyjson_is_str(val))
+        {
+          return static_cast<Price>(std::stod(yyjson_get_str(val)));
+        }
+      }
+    }
+    catch (const std::invalid_argument &e)
+    {
+      return 0.0F;
+    }
+    catch (const std::out_of_range &e)
+    {
+      return 0.0F;
+    }
+  }
+  return 0.0F;
+}
+
+void STOCK::StockData::addTimelinePoint(const CString &json_data)
+{
+  std::string _json_data = CCommon::UnicodeToStr(json_data);
+  yyjson_doc *doc = yyjson_read(_json_data.c_str(), _json_data.size(), 0);
+  if (doc != nullptr)
+  {
+    yyjson_val *root = yyjson_doc_get_root(doc);
+    if (root == nullptr)
+    {
+      return;
+    }
+
+    yyjson_val *result = yyjson_obj_get(root, "result");
+    if (result == nullptr)
+    {
+      return;
+    }
+
+    yyjson_val *data = yyjson_obj_get(result, "data");
+    if (data != nullptr && yyjson_is_arr(data))
+    {
+      yyjson_val *item;
+      yyjson_arr_iter iter;
+      yyjson_arr_iter_init(data, &iter);
+      while ((item = yyjson_arr_iter_next(&iter)))
+      {
+        if (item != nullptr)
+        {
+          TimelinePoint point = TimelinePoint();
+          point.time = utilities::JsonHelper::GetJsonString(item, "m");
+          point.volume = GetJsonVolume(item, "v");
+          point.price = GetJsonPrice(item, "p");
+          point.averagePrice = GetJsonPrice(item, "avg_p");
+          addTimelinePoint(point);
+        }
+      }
+    }
+  }
 }

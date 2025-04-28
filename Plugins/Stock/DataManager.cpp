@@ -131,7 +131,7 @@ HICON CDataManager::GetIcon(UINT id)
 //         && name.empty();
 // }
 
-std::shared_ptr<StockData> CDataManager::GetStockInfo(const std::wstring &code)
+std::shared_ptr<StockData> CDataManager::GetStockData(const std::wstring &code)
 {
     return stockMarket.getStock(code);
 }

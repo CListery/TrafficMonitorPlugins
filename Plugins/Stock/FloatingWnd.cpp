@@ -60,7 +60,9 @@ LRESULT CFloatingWnd::OnUpdateData(WPARAM wParam, LPARAM lParam)
     CString *pData = (CString *)wParam;
     if (pData)
     {
-        m_data = *pData;
+        auto data = g_data.GetStockData(m_stock_id);
+        data->clearTimelinePoint();
+        data->addTimelinePoint(*pData);
         delete pData;
         Invalidate();
     }
@@ -84,7 +86,7 @@ CFloatingWnd::~CFloatingWnd()
         m_CTransparentWnd.DestroyWindow();
 }
 
-BOOL CFloatingWnd::Create(CPoint pt, std::wstring stock_id)
+BOOL CFloatingWnd::Create(CFont* font, CPoint pt, std::wstring stock_id)
 {
     m_stock_id = stock_id;
     // 注册窗口类
@@ -109,6 +111,11 @@ BOOL CFloatingWnd::Create(CPoint pt, std::wstring stock_id)
     // 设置父窗口指针
     m_CTransparentWnd.SetParent(this);
 
+    if (font) {
+        //SetFont(font);
+        m_CTransparentWnd.SetFont(font);
+    }
+
     // 获取包含鼠标点的显示器
     HMONITOR hMonitor = MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST);
     MONITORINFO mi = {sizeof(MONITORINFO)};
@@ -124,20 +131,20 @@ BOOL CFloatingWnd::Create(CPoint pt, std::wstring stock_id)
         return FALSE;
     }
 
-    const int WIDTH = 300;
-    const int HEIGHT = 200;
+    const int WIDTH = 450;
+    const int HEIGHT = 210;
     int x = pt.x;
     int y = pt.y;
 
     // 调整位置
     if (x + WIDTH > screenRect.right)
-        x = screenRect.right - WIDTH;
+        x = x - WIDTH;
     if (y + HEIGHT > screenRect.bottom)
-        y = screenRect.bottom - HEIGHT;
+        y = y - HEIGHT;
     x = max(screenRect.left, x);
     y = max(screenRect.top, y);
 
-    CRect rect(pt.x, pt.y, pt.x + WIDTH, pt.y + HEIGHT);
+    CRect rect(x, y, x + WIDTH, y + HEIGHT);
 
     // 创建实际的浮动窗口
     if (!CreateEx(WS_EX_TOOLWINDOW | WS_EX_TOPMOST,
@@ -162,6 +169,36 @@ BOOL CFloatingWnd::Create(CPoint pt, std::wstring stock_id)
     return TRUE;
 }
 
+CPoint CFloatingWnd::Stock2Point(int x, int y, int w, int h, float unitY, const STOCK::TimelinePoint &item, const STOCK::Price prevClosePrice)
+{
+    CPoint p = CPoint();
+    std::vector<std::string> time_arr = CCommon::split(item.time, ":");
+    if (time_arr.size() == 3)
+    {
+        // 9:30 10:00 11:30 13:00 14:00 15:00
+        static int before12ClockOffset = 570; // 9.5 * 60;
+        static int after12ClockOffset = 660;  // 9.5 * 60 + 1.5 * 60;
+        static float totalMinutes = 240.0;    // 4 * 60;
+
+        short hour = static_cast<short>(std::stoi(time_arr[0]));
+        short minute = static_cast<short>(std::stoi(time_arr[1]));
+
+        int countX = hour * 60 + minute;
+
+        if (hour < 12)
+        {
+            countX -= before12ClockOffset;
+        }
+        else if (hour >= 13)
+        {
+            countX -= after12ClockOffset;
+        }
+        p.x = w / totalMinutes * countX;
+    }
+    p.y = (item.price - prevClosePrice) * unitY * 100;
+    return p;
+}
+
 void CFloatingWnd::OnPaint()
 {
     CPaintDC dc(this);
@@ -178,10 +215,86 @@ void CFloatingWnd::OnPaint()
     // 绘制背景
     memDC.FillSolidRect(rect, RGB(255, 255, 255));
 
-    // 绘制内容
     memDC.SetBkMode(TRANSPARENT);
-    // memDC.TextOut(10, 10, L"这是一个测试文本");
-    memDC.TextOut(10, 10, m_isRequesting ? L"Loading..." : m_data);
+
+    int x = rect.left, y = rect.top, h = rect.Height(), w = rect.Width();
+
+    CPen pGrid(PS_DOT, 1, RGB(240, 240, 240));
+    CPen* pOldPen = memDC.SelectObject(&pGrid);
+    memDC.MoveTo(0, h / 4);
+    memDC.LineTo(w, h / 4);
+    memDC.MoveTo(0, h / 4 * 3);
+    memDC.LineTo(w, h / 4 * 3);
+
+    memDC.MoveTo(w / 4, 0);
+    memDC.LineTo(w / 4, h);
+    memDC.MoveTo(w / 2, 0);
+    memDC.LineTo(w / 2, h);
+    memDC.MoveTo(w / 4 * 3, 0);
+    memDC.LineTo(w / 4 * 3, h);
+
+    CPen pMiddleLine(PS_DASHDOT, 1, RGB(140, 140, 140));
+    memDC.SelectObject(&pMiddleLine);
+    memDC.MoveTo(0, h / 2);
+    memDC.LineTo(w, h / 2);
+
+    CPen pKLine(PS_SOLID, 1, RGB(70, 113, 152));
+    memDC.SelectObject(&pKLine);
+    auto stockData = g_data.GetStockData(m_stock_id);
+    STOCK::TimelineData *timelineData = stockData->getTimelineData();
+    std::vector<STOCK::TimelinePoint> data = timelineData->data;
+
+    STOCK::RealTimeData realtimeData = stockData->realTimeData;
+
+    float halfH = h / 2.0;
+
+    float unitY = realtimeData.priceLimit != 0 ? -halfH / (realtimeData.priceLimit * 100) : 0;
+
+    memDC.SetTextColor(RGB(179, 64, 65));
+    CString upperLimitTxt;
+    upperLimitTxt.Format(_T("%.2f"), realtimeData.openPrice + abs(realtimeData.priceLimit));
+    CRect upperLimitTxtRect{ rect };
+    upperLimitTxtRect.right = upperLimitTxtRect.left + dc.GetTextExtent(upperLimitTxt).cx;
+    memDC.DrawText(upperLimitTxt, upperLimitTxtRect, DT_TOP | DT_SINGLELINE | DT_NOPREFIX);
+    
+    memDC.SetTextColor(RGB(44, 144, 51));
+    CString lowerLimitTxt;
+    lowerLimitTxt.Format(_T("%.2f"), realtimeData.openPrice - abs(realtimeData.priceLimit));
+    CRect lowerLimitTxtRect{ rect };
+    lowerLimitTxtRect.right = lowerLimitTxtRect.left + dc.GetTextExtent(lowerLimitTxt).cx;
+    memDC.DrawText(lowerLimitTxt, lowerLimitTxtRect, DT_BOTTOM| DT_SINGLELINE | DT_NOPREFIX);
+    
+    memDC.SetTextColor(RGB(154, 151, 157));
+    CString middleTxt;
+    middleTxt.Format(_T("%.2f"), realtimeData.openPrice);
+    CRect middleTxtRect{ rect };
+    middleTxtRect.right = middleTxtRect.left + dc.GetTextExtent(middleTxt).cx;
+    memDC.DrawText(middleTxt, middleTxtRect, DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+
+    if (data.size() > 0)
+    {
+        std::vector<CPoint> dataPoints;
+        for (const STOCK::TimelinePoint& item : data)
+        {
+            CPoint p = Stock2Point(x, y, w, h, unitY, item, realtimeData.prevClosePrice);
+            dataPoints.push_back(p);
+        }
+
+        int startY = halfH - (realtimeData.openPrice - realtimeData.prevClosePrice) * unitY * 100;
+        memDC.MoveTo(x, startY);
+        for (int i = 0; i < dataPoints.size(); i++)
+        {
+            int pX = dataPoints[i].x;
+            int pY = halfH - dataPoints[i].y;
+            memDC.LineTo(dataPoints[i].x, halfH - dataPoints[i].y);
+        }
+    }
+    else
+    {
+        memDC.TextOut(10, 10, m_isRequesting ? L"Loading..." : L"Load Fail!");
+    }
+
+    memDC.SelectObject(pOldPen);
 
     // 复制到屏幕
     dc.BitBlt(0, 0, rect.Width(), rect.Height(), &memDC, 0, 0, SRCCOPY);
