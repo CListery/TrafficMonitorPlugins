@@ -111,10 +111,7 @@ BOOL CFloatingWnd::Create(CFont* font, CPoint pt, std::wstring stock_id)
     // 设置父窗口指针
     m_CTransparentWnd.SetParent(this);
 
-    if (font) {
-        //SetFont(font);
-        m_CTransparentWnd.SetFont(font);
-    }
+    m_pfont = font;
 
     // 获取包含鼠标点的显示器
     HMONITOR hMonitor = MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST);
@@ -209,6 +206,9 @@ void CFloatingWnd::OnPaint()
     CDC memDC;
     CBitmap memBitmap;
     memDC.CreateCompatibleDC(&dc);
+    if(m_pfont){
+        memDC.SelectObject(m_pfont);
+    }
     memBitmap.CreateCompatibleBitmap(&dc, rect.Width(), rect.Height());
     CBitmap *pOldBitmap = memDC.SelectObject(&memBitmap);
 
@@ -254,21 +254,21 @@ void CFloatingWnd::OnPaint()
     CString upperLimitTxt;
     upperLimitTxt.Format(_T("%.2f"), realtimeData.openPrice + abs(realtimeData.priceLimit));
     CRect upperLimitTxtRect{ rect };
-    upperLimitTxtRect.right = upperLimitTxtRect.left + dc.GetTextExtent(upperLimitTxt).cx;
+    upperLimitTxtRect.right = upperLimitTxtRect.left + memDC.GetTextExtent(upperLimitTxt).cx;
     memDC.DrawText(upperLimitTxt, upperLimitTxtRect, DT_TOP | DT_SINGLELINE | DT_NOPREFIX);
     
     memDC.SetTextColor(RGB(44, 144, 51));
     CString lowerLimitTxt;
     lowerLimitTxt.Format(_T("%.2f"), realtimeData.openPrice - abs(realtimeData.priceLimit));
     CRect lowerLimitTxtRect{ rect };
-    lowerLimitTxtRect.right = lowerLimitTxtRect.left + dc.GetTextExtent(lowerLimitTxt).cx;
+    lowerLimitTxtRect.right = lowerLimitTxtRect.left + memDC.GetTextExtent(lowerLimitTxt).cx;
     memDC.DrawText(lowerLimitTxt, lowerLimitTxtRect, DT_BOTTOM| DT_SINGLELINE | DT_NOPREFIX);
     
     memDC.SetTextColor(RGB(154, 151, 157));
     CString middleTxt;
     middleTxt.Format(_T("%.2f"), realtimeData.openPrice);
     CRect middleTxtRect{ rect };
-    middleTxtRect.right = middleTxtRect.left + dc.GetTextExtent(middleTxt).cx;
+    middleTxtRect.right = middleTxtRect.left + memDC.GetTextExtent(middleTxt).cx;
     memDC.DrawText(middleTxt, middleTxtRect, DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
 
     if (data.size() > 0)
@@ -289,9 +289,10 @@ void CFloatingWnd::OnPaint()
             memDC.LineTo(dataPoints[i].x, halfH - dataPoints[i].y);
         }
     }
-    else
-    {
-        memDC.TextOut(10, 10, m_isRequesting ? L"Loading..." : L"Load Fail!");
+    if (m_isRequesting || data.size() < 1) {
+        memDC.SelectObject(&pMiddleLine);
+        CString status{ m_isRequesting ? L"Loading..." : L"Load Fail!" };
+        memDC.TextOut(w - memDC.GetTextExtent(status).cx - 5, 10, status);
     }
 
     memDC.SelectObject(pOldPen);
@@ -318,6 +319,7 @@ void CFloatingWnd::RequestData()
     {
         m_isRequesting = TRUE;
         AfxBeginThread(NetworkThreadProc, this);
+        Invalidate();
     }
 }
 
@@ -332,6 +334,8 @@ UINT CFloatingWnd::NetworkThreadProc(LPVOID pParam)
         {
             return 0;
         }
+
+        TRACE(L"CFloatingWnd getMinlineData...\n");
 
         std::wstring url{L"https://cn.finance.sina.com.cn/minline/getMinlineData?"};
         // https://cn.finance.sina.com.cn/minline/getMinlineData?symbol=sz000100&version=7.11.0&dpc=1

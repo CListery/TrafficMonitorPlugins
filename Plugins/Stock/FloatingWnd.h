@@ -46,4 +46,5 @@ private:
     std::wstring m_stock_id;
     volatile BOOL m_isRequesting;
     volatile BOOL m_isDestroying; // 添加销毁标志
+    CFont* m_pfont{};
 };
