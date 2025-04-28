@@ -49,6 +49,8 @@ void CDataManager::LoadConfig(const std::wstring &config_dir)
     utilities::CIniHelper ini(m_config_path);
     ini.GetStringList(L"config", L"stock_code", m_setting_data.m_stock_codes, std::vector<std::wstring>{});
     m_setting_data.m_full_day = ini.GetBool(L"config", L"full_day", true);
+    m_setting_data.m_show_stock_name = ini.GetBool(L"config", L"show_stock_name", true);
+    m_setting_data.m_color_with_price = ini.GetBool(L"config", L"color_with_price", true);
 }
 
 void CDataManager::SaveConfig()
@@ -58,6 +60,8 @@ void CDataManager::SaveConfig()
         utilities::CIniHelper ini(m_config_path);
         ini.WriteStringList(L"config", L"stock_code", m_setting_data.m_stock_codes);
         ini.WriteBool(L"config", L"full_day", m_setting_data.m_full_day);
+        ini.WriteBool(L"config", L"show_stock_name", m_setting_data.m_show_stock_name);
+        ini.WriteBool(L"config", L"color_with_price", m_setting_data.m_color_with_price);
         ini.Save();
     }
 }

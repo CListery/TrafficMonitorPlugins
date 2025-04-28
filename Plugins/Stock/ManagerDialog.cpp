@@ -38,6 +38,8 @@ BEGIN_MESSAGE_MAP(CManagerDialog, CDialog)
     ON_BN_CLICKED(IDCANCEL, &CManagerDialog::OnBnClickedCancel)
     ON_LBN_DBLCLK(IDC_MGR_LIST, &CManagerDialog::OnLbnDblclkMgrList)
     ON_WM_GETMINMAXINFO()
+    ON_BN_CLICKED(IDC_SHOW_STOCK_NAME_CHECK, &CManagerDialog::OnBnClickedShowStockNameCheck)
+    ON_BN_CLICKED(IDC_COLOR_WITH_PRICE_CHECK, &CManagerDialog::OnBnClickedColorWithPriceCheck)
 END_MESSAGE_MAP()
 
 
@@ -66,6 +68,8 @@ BOOL CManagerDialog::OnInitDialog()
     }
 
     CheckDlgButton(IDC_FULL_DAY_CHECK, m_data.m_full_day);
+    CheckDlgButton(IDC_SHOW_STOCK_NAME_CHECK, m_data.m_show_stock_name);
+    CheckDlgButton(IDC_COLOR_WITH_PRICE_CHECK, m_data.m_color_with_price);
 
     return TRUE;  // return TRUE unless you set the focus to a control
                   // 异常: OCX 属性页应返回 FALSE
@@ -125,6 +129,16 @@ void CManagerDialog::OnAddBtnClick()
 void CManagerDialog::OnClickedFullDayCheck()
 {
     m_data.m_full_day = (IsDlgButtonChecked(IDC_FULL_DAY_CHECK) != 0);
+}
+
+void CManagerDialog::OnBnClickedShowStockNameCheck()
+{
+    m_data.m_show_stock_name = (IsDlgButtonChecked(IDC_SHOW_STOCK_NAME_CHECK) != 0);
+}
+
+void CManagerDialog::OnBnClickedColorWithPriceCheck()
+{
+    m_data.m_color_with_price = (IsDlgButtonChecked(IDC_COLOR_WITH_PRICE_CHECK) != 0);
 }
 
 void CManagerDialog::OnBnClickedOk()

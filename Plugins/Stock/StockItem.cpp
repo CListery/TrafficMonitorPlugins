@@ -73,21 +73,33 @@ void StockItem::DrawItem(void *hDC, int x, int y, int w, int h, bool dark_mode)
         color_green = RGB(46, 139, 87);
     }
 
-    // 绘制名称
-    pDC->SetTextColor(color_default);
-    CString stock_name{data->info.displayName.c_str()};
-    stock_name += _T(": ");
-    CRect rect_name{rect};
-    rect_name.right = rect_name.left + pDC->GetTextExtent(stock_name).cx;
-    pDC->DrawText(stock_name, rect_name, DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
-
-    // 绘制数值
-    if (data->realTimeData.displayFluctuation.find('-') != std::wstring::npos)
-        pDC->SetTextColor(color_green);
-    else
-        pDC->SetTextColor(color_red);
     CRect rect_value{rect};
-    rect_value.left = rect_name.right;
+    if (g_data.m_setting_data.m_show_stock_name)
+    {
+        // 绘制名称
+        pDC->SetTextColor(color_default);
+        CString stock_name{data->info.displayName.c_str()};
+        stock_name += _T(": ");
+        CRect rect_name{rect};
+        rect_name.right = rect_name.left + pDC->GetTextExtent(stock_name).cx;
+        pDC->DrawText(stock_name, rect_name, DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+        
+        rect_value.left = rect_name.right;
+    }
+
+    if (g_data.m_setting_data.m_color_with_price)
+    {
+        // 绘制数值
+        if (data->realTimeData.displayFluctuation.find('-') != std::wstring::npos)
+            pDC->SetTextColor(color_green);
+        else
+            pDC->SetTextColor(color_red);
+    }
+    else
+    {
+        pDC->SetTextColor(color_default);
+    }
+
     UINT flags = DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX;
     if (g_data.m_right_align)
         flags |= DT_RIGHT;
@@ -115,7 +127,8 @@ int StockItem::OnMouseEvent(MouseEventType type, int x, int y, void *hWnd, int f
 
     case IPluginItem::MT_LCLICKED:
     {
-        if (stock_id.find(kSZ) == 0 || stock_id.find(kBJ) == 0 || stock_id.find(kSH) == 0) {
+        if (stock_id.find(kSZ) == 0 || stock_id.find(kBJ) == 0 || stock_id.find(kSH) == 0)
+        {
             CPoint ptScreen = CPoint(x, y);
             Stock::Instance().ShowFloatingWnd(hWnd, ptScreen, stock_id);
             return 1;

@@ -231,19 +231,33 @@ void CFloatingWnd::OnPaint()
     float unitY = realtimeData.priceLimit != 0 ? -halfH / (realtimeData.priceLimit * 100) : 0;
 
     memDC.SetTextColor(RGB(179, 64, 65));
+    float upperLimitPrice = realtimeData.openPrice + abs(realtimeData.priceLimit);
     CString upperLimitTxt;
-    upperLimitTxt.Format(_T("%.2f"), realtimeData.openPrice + abs(realtimeData.priceLimit));
+    upperLimitTxt.Format(_T("%.2f"), upperLimitPrice);
     CRect upperLimitTxtRect{ rect };
     upperLimitTxtRect.right = upperLimitTxtRect.left + memDC.GetTextExtent(upperLimitTxt).cx;
     memDC.DrawText(upperLimitTxt, upperLimitTxtRect, DT_TOP | DT_SINGLELINE | DT_NOPREFIX);
+
+    CString upperLimitRateTxt;
+    upperLimitRateTxt.Format(_T("%.2f%%"), upperLimitPrice / realtimeData.openPrice);
+    CRect upperLimitRateTxtRect{ rect };
+    upperLimitRateTxtRect.left = w - (upperLimitRateTxtRect.left + memDC.GetTextExtent(upperLimitRateTxt).cx);
+    memDC.DrawText(upperLimitRateTxt, upperLimitRateTxtRect, DT_TOP | DT_SINGLELINE | DT_NOPREFIX);
     
     memDC.SetTextColor(RGB(44, 144, 51));
+    float lowerLimitPrice = realtimeData.openPrice - abs(realtimeData.priceLimit);
     CString lowerLimitTxt;
-    lowerLimitTxt.Format(_T("%.2f"), realtimeData.openPrice - abs(realtimeData.priceLimit));
+    lowerLimitTxt.Format(_T("%.2f"), lowerLimitPrice);
     CRect lowerLimitTxtRect{ rect };
     lowerLimitTxtRect.right = lowerLimitTxtRect.left + memDC.GetTextExtent(lowerLimitTxt).cx;
     memDC.DrawText(lowerLimitTxt, lowerLimitTxtRect, DT_BOTTOM| DT_SINGLELINE | DT_NOPREFIX);
-    
+
+    CString lowerLimitRateTxt;
+    lowerLimitRateTxt.Format(_T("-%.2f%%"), upperLimitPrice / realtimeData.openPrice);
+    CRect lowerLimitRateTxtRect{ rect };
+    lowerLimitRateTxtRect.left = w - (lowerLimitRateTxtRect.left + memDC.GetTextExtent(lowerLimitRateTxt).cx);
+    memDC.DrawText(lowerLimitRateTxt, lowerLimitRateTxtRect, DT_BOTTOM | DT_SINGLELINE | DT_NOPREFIX);
+
     memDC.SetTextColor(RGB(154, 151, 157));
     CString middleTxt;
     middleTxt.Format(_T("%.2f"), realtimeData.openPrice);
