@@ -40,8 +40,8 @@ void CTransparentWnd::OnLButtonDown(UINT nFlags, CPoint point)
         if (!rcFloat.PtInRect(ptScreen))
         {
             TRACE(L"Destroying floating window\n");
-            m_pParent->DestroyWindow();
             DestroyWindow();
+            Stock::Instance().DestroyFloatingWnd();
         }
         else
         {

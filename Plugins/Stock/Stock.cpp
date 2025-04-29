@@ -7,7 +7,7 @@
 
 Stock Stock::m_instance;
 
-Stock::Stock()
+Stock::Stock() : m_pFloatingWnd(NULL)
 {
     m_items = vector<StockItem>(Stock_ITEM_MAX);
     fill(m_items.begin(), m_items.end(), StockItem());
@@ -15,6 +15,11 @@ Stock::Stock()
     {
         m_items[index].index = index;
     }
+}
+
+Stock::~Stock()
+{
+    DestroyFloatingWnd();
 }
 
 Stock &Stock::Instance()
@@ -99,6 +104,30 @@ void Stock::DataRequired()
         last_req_time = cur_time;
         SendStockInfoRequest();
     }
+    std::lock_guard<std::mutex> lock(m_wndMutex);
+    if (m_pFloatingWnd != NULL && ::IsWindow(m_pFloatingWnd->GetSafeHwnd()))
+    {
+        m_pFloatingWnd->SendMessage(FWND_MSG_REQUEST_DATA, cur_time, 0);
+        // DWORD_PTR dwResult = 0;
+        // LRESULT lr = ::SendMessageTimeout(
+        //     m_pFloatingWnd->GetSafeHwnd(),  // 目标窗口句柄
+        //     FWND_MSG_REQUEST_DATA,          // 消息ID
+        //     cur_time,                       // wParam
+        //     0,                              // lParam
+        //     SMTO_ABORTIFHUNG | SMTO_BLOCK,  // 如果窗口挂起则放弃，并阻塞调用线程
+        //     2000,                           // 2秒超时
+        //     &dwResult);                     // 接收返回值
+
+        // if (lr == 0) // 失败
+        //{
+        //     DWORD dwErr = GetLastError();
+        //     // 处理错误：记录日志或销毁无效窗口等
+        //     if (dwErr == ERROR_TIMEOUT)
+        //     {
+        //         TRACE("SendMessageTimeout timed out\n");
+        //     }
+        // }
+    }
 }
 
 ITMPlugin::OptionReturn Stock::ShowOptionsDialog(void *hParent)
@@ -133,7 +162,7 @@ const wchar_t *Stock::GetInfo(PluginInfoIndex index)
     case ITMPlugin::TMI_URL:
         return L"https://github.com/CListery/TrafficMonitorPlugins";
     case TMI_VERSION:
-        return L"1.13";
+        return L"1.2.0.0";
     default:
         break;
     }
@@ -251,28 +280,63 @@ void Stock::ShowContextMenu(CWnd *pWnd)
     }
 }
 
-void Stock::ShowFloatingWnd(void* hWnd, CPoint ptScreen, std::wstring stock_id)
+void Stock::ShowFloatingWnd(void *hWnd, CPoint ptScreen, std::wstring stock_id)
 {
     // 如果已有悬浮窗，先销毁
-    if (m_pFloatingWnd != NULL)
-    {
-        m_pFloatingWnd->DestroyWindow();
-        delete m_pFloatingWnd;
-        m_pFloatingWnd = NULL;
-    }
+    DestroyFloatingWnd();
 
     ClientToScreen((HWND)hWnd, &ptScreen);
 
-    CWnd* pWnd = CWnd::FromHandle((HWND)hWnd);
+    CWnd *pWnd = CWnd::FromHandle((HWND)hWnd);
 
-    CFont * font = pWnd->GetParent()->GetFont();
+    CFont *font = pWnd->GetParent()->GetFont();
 
+    std::lock_guard<std::mutex> lock(m_wndMutex);
     // 创建新的悬浮窗
     m_pFloatingWnd = new CFloatingWnd;
     if (!m_pFloatingWnd->Create(font, ptScreen, stock_id))
     {
         delete m_pFloatingWnd;
         m_pFloatingWnd = NULL;
+    }
+}
+
+void Stock::DestroyFloatingWnd()
+{
+    std::lock_guard<std::mutex> lock(m_wndMutex);
+    if (m_pFloatingWnd != NULL && ::IsWindow(m_pFloatingWnd->GetSafeHwnd()))
+    {
+        m_pFloatingWnd->DestroyWindow();
+        delete m_pFloatingWnd;
+        m_pFloatingWnd = NULL;
+    }
+}
+
+void Stock::UpdateKLine()
+{
+    std::lock_guard<std::mutex> lock(m_wndMutex);
+    if (m_pFloatingWnd != NULL && ::IsWindow(m_pFloatingWnd->GetSafeHwnd()))
+    {
+        m_pFloatingWnd->SendMessage(FWND_MSG_UPDATE_STATUS, FALSE, 0);
+        // DWORD_PTR dwResult = 0;
+        // LRESULT lr = ::SendMessageTimeout(
+        //     m_pFloatingWnd->GetSafeHwnd(),  // 目标窗口句柄
+        //     FWND_MSG_UPDATE_STATUS,          // 消息ID
+        //     FALSE,                       // wParam
+        //     0,                              // lParam
+        //     SMTO_ABORTIFHUNG | SMTO_BLOCK,  // 如果窗口挂起则放弃，并阻塞调用线程
+        //     2000,                           // 2秒超时
+        //     &dwResult);                     // 接收返回值
+
+        // if (lr == 0) // 失败
+        //{
+        //     DWORD dwErr = GetLastError();
+        //     // 处理错误：记录日志或销毁无效窗口等
+        //     if (dwErr == ERROR_TIMEOUT)
+        //     {
+        //         TRACE("SendMessageTimeout timed out\n");
+        //     }
+        // }
     }
 }
 

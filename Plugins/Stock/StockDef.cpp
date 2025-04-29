@@ -204,6 +204,20 @@ void STOCK::RealTimeData::LoadHK(std::vector<std::string> data, size_t size)
   turnover = {convert<Price>(data[11])};
 }
 
+void STOCK::StockMarket::LoadTimelineDataByJson(std::wstring stock_id, CString *pData)
+{
+  auto data = g_data.GetStockData(stock_id);
+  {
+    std::lock_guard<std::mutex> lock(Stock::Instance().m_stockDataMutex);
+    data->clearTimelinePoint();
+    if (pData)
+    {
+      data->addTimelinePoint(*pData);
+    }
+  }
+  Stock::Instance().UpdateKLine();
+}
+
 std::wstring STOCK::StockData::GetCurrentDisplay(bool include_name) const
 {
   std::wstringstream wss;

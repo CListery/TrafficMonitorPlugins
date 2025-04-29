@@ -77,18 +77,17 @@ BEGIN
     PUSHBUTTON      "取消",IDCANCEL,166,105,45,14
     PUSHBUTTON      "添加",IDC_MGR_ADD_BTN,17,102,35,14
     PUSHBUTTON      "删除",IDC_MGR_DEL_BTN,66,102,35,14
-    CONTROL         "全天更新",IDC_FULL_DAY_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,118,19,48,10
+    CONTROL         "全天更新",IDC_FULL_DAY_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,118,19,59,10
     GROUPBOX        "配置",IDC_STATIC,112,7,98,48
-    CONTROL         "显示股票名称",IDC_SHOW_STOCK_NAME_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,118,31,48,10
-    CONTROL         "涨跌颜色标识",IDC_COLOR_WITH_PRICE_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,118,43,48,10
+    CONTROL         "显示股票名称",IDC_SHOW_STOCK_NAME_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,118,31,59,10
+    CONTROL         "涨跌颜色标识",IDC_COLOR_WITH_PRICE_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,118,43,59,10
     GROUPBOX        "股票清单",IDC_STATIC,7,7,103,112
     LISTBOX         IDC_MGR_LIST,9,18,99,81,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
-    EDITTEXT        IDC_EDIT1,152,65,40,12,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "宽度",IDC_STATIC,118,67,31,8
-    EDITTEXT        IDC_EDIT2,152,81,40,12,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "高度",IDC_STATIC,118,83,31,8
-    GROUPBOX        "配置",IDC_STATIC,112,55,98,44
-    COMBOBOX        IDC_COMBO1,161,65,48,30,CBS_DROPDOWN | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "宽度",IDC_STATIC,118,67,17,8
+    EDITTEXT        IDC_KLINE_HEIGHT_EDIT,138,81,40,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "高度",IDC_STATIC,118,83,17,8
+    GROUPBOX        "走势图",IDC_STATIC,112,55,98,44
+    EDITTEXT        IDC_KLINE_WIDTH_EDIT,138,66,40,12,ES_AUTOHSCROLL | ES_NUMBER
 END
 
 
@@ -165,7 +164,6 @@ BEGIN
     0, 0, 0, 0,
     0, 0, 0, 0,
     0, 0, 0, 0,
-    0, 0, 0, 0,
     0, 0, 0, 0
 END
 
@@ -176,8 +174,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,1,3,1
- PRODUCTVERSION 1,1,3,1
+ FILEVERSION 1,2,0,0
+ PRODUCTVERSION 1,2,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -193,13 +191,12 @@ BEGIN
         BLOCK "080404b0"
         BEGIN
             VALUE "CompanyName", "By CListery"
-            VALUE "FileDescription", "Stock Plugin for TrafficMonitor"
-            VALUE "FileVersion", "1.1.3.1"
+            VALUE "FileVersion", "1.2.0.0"
             VALUE "InternalName", "Stock.dll"
-            VALUE "LegalCopyright", "Copyright (C) 2022 By CListery"
+            VALUE "LegalCopyright", "Copyright (C) By CListery. All rights reserved."
             VALUE "OriginalFilename", "Stock.dll"
             VALUE "ProductName", "Stock Plugin for TrafficMonitor"
-            VALUE "ProductVersion", "1.1.3.1"
+            VALUE "ProductVersion", "1.2.0.0"
         END
     END
     BLOCK "VarFileInfo"
@@ -277,12 +274,17 @@ BEGIN
     PUSHBUTTON      "Cancel",IDCANCEL,166,105,45,14
     PUSHBUTTON      "Add",IDC_MGR_ADD_BTN,17,102,35,14
     PUSHBUTTON      "Remove",IDC_MGR_DEL_BTN,66,102,35,14
-    CONTROL         "All day updates",IDC_FULL_DAY_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,118,19,72,10
-    GROUPBOX        "Configure",IDC_STATIC,112,7,98,51
-    CONTROL         "Show stock name",IDC_SHOW_STOCK_NAME_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,118,31,72,10
-    CONTROL         "Show colors",IDC_COLOR_WITH_PRICE_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,118,43,72,10
+    CONTROL         "All day updates",IDC_FULL_DAY_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,118,19,69,10
+    GROUPBOX        "Configure",IDC_STATIC,112,7,98,48
+    CONTROL         "Show stock name",IDC_SHOW_STOCK_NAME_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,118,31,69,10
+    CONTROL         "Show colors",IDC_COLOR_WITH_PRICE_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,118,43,69,10
     GROUPBOX        "Stock list",IDC_STATIC,7,7,103,112
     LISTBOX         IDC_MGR_LIST,9,18,99,81,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Width",IDC_STATIC,118,67,22,8
+    EDITTEXT        IDC_KLINE_HEIGHT_EDIT,145,81,40,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "Height",IDC_STATIC,118,83,22,8
+    GROUPBOX        "K-Line",IDC_STATIC,112,55,98,44
+    EDITTEXT        IDC_KLINE_WIDTH_EDIT,145,66,40,12,ES_AUTOHSCROLL | ES_NUMBER
 END
 
 IDD_OPTIONS_DIALOG DIALOGEX 0, 0, 213, 90
@@ -344,6 +346,11 @@ BEGIN
     100, 0, 0, 0,
     100, 0, 0, 0,
     0, 100, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
     0, 0, 0, 0,
     0, 0, 0, 0,
     0, 0, 0, 0,

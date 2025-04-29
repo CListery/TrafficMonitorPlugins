@@ -4,21 +4,15 @@
 #include <memory>
 #include "Common.h"
 #include "DataManager.h"
-
-// 定义自定义消息
-#define WM_UPDATE_STATUS (WM_USER + 100)
-#define WM_UPDATE_DATA (WM_USER + 101)
-
-constexpr auto WEB_USERAGENT = _T("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36 Edg/135.0.0.0");
+#include <Stock.h>
 
 BEGIN_MESSAGE_MAP(CFloatingWnd, CWnd)
 ON_WM_PAINT()
 ON_WM_ERASEBKGND()
 ON_WM_LBUTTONDOWN()
 ON_WM_CREATE()
-// ... 其他消息映射
-ON_MESSAGE(WM_UPDATE_STATUS, OnUpdateStatus)
-ON_MESSAGE(WM_UPDATE_DATA, OnUpdateData)
+ON_MESSAGE(FWND_MSG_UPDATE_STATUS, OnUpdateStatus)
+ON_MESSAGE(FWND_MSG_REQUEST_DATA, OnRequestData)
 END_MESSAGE_MAP()
 
 int CFloatingWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
@@ -26,35 +20,33 @@ int CFloatingWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
     if (CWnd::OnCreate(lpCreateStruct) == -1)
         return -1;
 
-    // 开始网络请求
-    RequestData();
+    PostMessage(FWND_MSG_REQUEST_DATA, time(nullptr), 0);
     return 0;
 }
 
 // 处理消息
 LRESULT CFloatingWnd::OnUpdateStatus(WPARAM wParam, LPARAM lParam)
 {
-    m_isRequesting = (BOOL)wParam;
     Invalidate();
     return 0;
 }
 
-LRESULT CFloatingWnd::OnUpdateData(WPARAM wParam, LPARAM lParam)
+LRESULT CFloatingWnd::OnRequestData(WPARAM wParam, LPARAM lParam)
 {
-    CString *pData = (CString *)wParam;
-    if (pData)
+    time_t req_time = (time_t)wParam;
+    if (req_time)
     {
-        auto data = g_data.GetStockData(m_stock_id);
-        data->clearTimelinePoint();
-        data->addTimelinePoint(*pData);
-        delete pData;
-        Invalidate();
+        if (req_time - m_last_request_time > 10)
+        {
+            m_last_request_time = req_time;
+            // 开始网络请求
+            RequestData();
+        }
     }
     return 0;
 }
 
-CFloatingWnd::CFloatingWnd()
-    : m_isRequesting(FALSE), m_isDestroying(FALSE)
+CFloatingWnd::CFloatingWnd() : m_isDestroying(FALSE)
 {
 }
 
@@ -66,7 +58,7 @@ CFloatingWnd::~CFloatingWnd()
         m_CTransparentWnd.DestroyWindow();
 }
 
-BOOL CFloatingWnd::Create(CFont* font, CPoint pt, std::wstring stock_id)
+BOOL CFloatingWnd::Create(CFont *font, CPoint pt, std::wstring stock_id)
 {
     m_stock_id = stock_id;
     // 注册窗口类
@@ -108,8 +100,8 @@ BOOL CFloatingWnd::Create(CFont* font, CPoint pt, std::wstring stock_id)
         return FALSE;
     }
 
-    const int WIDTH = 450;
-    const int HEIGHT = 210;
+    const int WIDTH = g_data.RDPI(g_data.m_setting_data.m_kline_width);
+    const int HEIGHT = g_data.RDPI(g_data.m_setting_data.m_kline_height);
     int x = pt.x;
     int y = pt.y;
 
@@ -157,8 +149,8 @@ CPoint CFloatingWnd::Stock2Point(int x, int y, int w, int h, float unitY, const 
         static int after12ClockOffset = 660;  // 9.5 * 60 + 1.5 * 60;
         static float totalMinutes = 240.0;    // 4 * 60;
 
-        short hour = static_cast<short>(std::stoi(time_arr[0]));
-        short minute = static_cast<short>(std::stoi(time_arr[1]));
+        int hour = _ttoi(CString(time_arr[0].c_str()));
+        int minute = _ttoi(CString(time_arr[1].c_str()));
 
         int countX = hour * 60 + minute;
 
@@ -186,7 +178,8 @@ void CFloatingWnd::OnPaint()
     CDC memDC;
     CBitmap memBitmap;
     memDC.CreateCompatibleDC(&dc);
-    if(m_pfont){
+    if (m_pfont)
+    {
         memDC.SelectObject(m_pfont);
     }
     memBitmap.CreateCompatibleBitmap(&dc, rect.Width(), rect.Height());
@@ -200,7 +193,7 @@ void CFloatingWnd::OnPaint()
     int x = rect.left, y = rect.top, h = rect.Height(), w = rect.Width();
 
     CPen pGrid(PS_DOT, 1, RGB(240, 240, 240));
-    CPen* pOldPen = memDC.SelectObject(&pGrid);
+    CPen *pOldPen = memDC.SelectObject(&pGrid);
     memDC.MoveTo(0, h / 4);
     memDC.LineTo(w, h / 4);
     memDC.MoveTo(0, h / 4 * 3);
@@ -220,11 +213,15 @@ void CFloatingWnd::OnPaint()
 
     CPen pKLine(PS_SOLID, 1, RGB(70, 113, 152));
     memDC.SelectObject(&pKLine);
-    auto stockData = g_data.GetStockData(m_stock_id);
-    STOCK::TimelineData *timelineData = stockData->getTimelineData();
-    std::vector<STOCK::TimelinePoint> data = timelineData->data;
 
-    STOCK::RealTimeData realtimeData = stockData->realTimeData;
+    STOCK::RealTimeData realtimeData;
+    std::vector<STOCK::TimelinePoint> timelinePoint;
+    {
+        std::lock_guard<std::mutex> lock(Stock::Instance().m_stockDataMutex);
+        auto stockData = g_data.GetStockData(m_stock_id);
+        realtimeData = stockData->realTimeData;
+        timelinePoint = stockData->getTimelineData()->data;
+    }
 
     float halfH = h / 2.0;
 
@@ -234,41 +231,41 @@ void CFloatingWnd::OnPaint()
     float upperLimitPrice = realtimeData.openPrice + abs(realtimeData.priceLimit);
     CString upperLimitTxt;
     upperLimitTxt.Format(_T("%.2f"), upperLimitPrice);
-    CRect upperLimitTxtRect{ rect };
+    CRect upperLimitTxtRect{rect};
     upperLimitTxtRect.right = upperLimitTxtRect.left + memDC.GetTextExtent(upperLimitTxt).cx;
     memDC.DrawText(upperLimitTxt, upperLimitTxtRect, DT_TOP | DT_SINGLELINE | DT_NOPREFIX);
 
     CString upperLimitRateTxt;
     upperLimitRateTxt.Format(_T("%.2f%%"), upperLimitPrice / realtimeData.openPrice);
-    CRect upperLimitRateTxtRect{ rect };
+    CRect upperLimitRateTxtRect{rect};
     upperLimitRateTxtRect.left = w - (upperLimitRateTxtRect.left + memDC.GetTextExtent(upperLimitRateTxt).cx);
     memDC.DrawText(upperLimitRateTxt, upperLimitRateTxtRect, DT_TOP | DT_SINGLELINE | DT_NOPREFIX);
-    
+
     memDC.SetTextColor(RGB(44, 144, 51));
     float lowerLimitPrice = realtimeData.openPrice - abs(realtimeData.priceLimit);
     CString lowerLimitTxt;
     lowerLimitTxt.Format(_T("%.2f"), lowerLimitPrice);
-    CRect lowerLimitTxtRect{ rect };
+    CRect lowerLimitTxtRect{rect};
     lowerLimitTxtRect.right = lowerLimitTxtRect.left + memDC.GetTextExtent(lowerLimitTxt).cx;
-    memDC.DrawText(lowerLimitTxt, lowerLimitTxtRect, DT_BOTTOM| DT_SINGLELINE | DT_NOPREFIX);
+    memDC.DrawText(lowerLimitTxt, lowerLimitTxtRect, DT_BOTTOM | DT_SINGLELINE | DT_NOPREFIX);
 
     CString lowerLimitRateTxt;
     lowerLimitRateTxt.Format(_T("-%.2f%%"), upperLimitPrice / realtimeData.openPrice);
-    CRect lowerLimitRateTxtRect{ rect };
+    CRect lowerLimitRateTxtRect{rect};
     lowerLimitRateTxtRect.left = w - (lowerLimitRateTxtRect.left + memDC.GetTextExtent(lowerLimitRateTxt).cx);
     memDC.DrawText(lowerLimitRateTxt, lowerLimitRateTxtRect, DT_BOTTOM | DT_SINGLELINE | DT_NOPREFIX);
 
     memDC.SetTextColor(RGB(154, 151, 157));
     CString middleTxt;
     middleTxt.Format(_T("%.2f"), realtimeData.openPrice);
-    CRect middleTxtRect{ rect };
+    CRect middleTxtRect{rect};
     middleTxtRect.right = middleTxtRect.left + memDC.GetTextExtent(middleTxt).cx;
     memDC.DrawText(middleTxt, middleTxtRect, DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
 
-    if (data.size() > 0)
+    if (timelinePoint.size() > 0)
     {
         std::vector<CPoint> dataPoints;
-        for (const STOCK::TimelinePoint& item : data)
+        for (const STOCK::TimelinePoint &item : timelinePoint)
         {
             CPoint p = Stock2Point(x, y, w, h, unitY, item, realtimeData.prevClosePrice);
             dataPoints.push_back(p);
@@ -283,10 +280,11 @@ void CFloatingWnd::OnPaint()
             memDC.LineTo(dataPoints[i].x, halfH - dataPoints[i].y);
         }
     }
-    if (m_isRequesting || data.size() < 1) {
+    else
+    {
         memDC.SelectObject(&pMiddleLine);
-        CString status{ m_isRequesting ? L"Loading..." : L"Load Fail!" };
-        memDC.TextOut(w - memDC.GetTextExtent(status).cx - 5, 10, status);
+        CString status{L"Loading..."};
+        memDC.TextOut((w - memDC.GetTextExtent(status).cx) / 2, g_data.RDPI(10), status);
     }
 
     memDC.SelectObject(pOldPen);
@@ -309,90 +307,25 @@ void CFloatingWnd::OnLButtonDown(UINT nFlags, CPoint point)
 
 void CFloatingWnd::RequestData()
 {
-    if (!m_isRequesting)
+    if (!m_is_thread_running)
     {
-        m_isRequesting = TRUE;
         AfxBeginThread(NetworkThreadProc, this);
-        Invalidate();
     }
 }
 
 UINT CFloatingWnd::NetworkThreadProc(LPVOID pParam)
 {
-    CFloatingWnd *pWnd = (CFloatingWnd *)pParam;
+    CFloatingWnd *pFW = (CFloatingWnd *)pParam;
 
-    try
+    AFX_MANAGE_STATE(AfxGetStaticModuleState());
+    CFlagLocker flag_locker(pFW->m_is_thread_running);
+
+    if (pFW->m_stock_id.empty())
     {
-        // 检查窗口是否正在销毁
-        if (pWnd->m_isDestroying)
-        {
-            return 0;
-        }
-
-        TRACE(L"CFloatingWnd getMinlineData...\n");
-
-        std::wstring url{L"https://cn.finance.sina.com.cn/minline/getMinlineData?"};
-        // https://cn.finance.sina.com.cn/minline/getMinlineData?symbol=sz000100&version=7.11.0&dpc=1
-        std::vector<std::wstring> params;
-        params.push_back(L"symbol=" + pWnd->m_stock_id);
-        params.push_back(L"version=7.11.0");
-        params.push_back(L"dpc=1");
-
-        url += CCommon::vectorJoinString(params, L"&");
-        CCommon::WriteLog(url.c_str(), g_data.m_log_path.c_str());
-
-        // CString strHeaders = L"Referer: https://finance.sina.com.cn/realstock/company/" + m_stock_id + L"/nc.shtml";
-        std::wstring strHeaders{L"Referer: https://finance.sina.com.cn/realstock/company/"};
-        strHeaders += pWnd->m_stock_id;
-        strHeaders += L"/nc.shtml";
-        CString headers = strHeaders.c_str();
-
-        CInternetSession *session = new CInternetSession(WEB_USERAGENT);
-        CHttpFile *pFile = (CHttpFile *)session->OpenURL(url.c_str(), 1, INTERNET_FLAG_TRANSFER_ASCII, headers, headers.GetLength());
-
-        // 检查窗口是否有效
-        if (pWnd->m_isDestroying)
-        {
-            return 0;
-        }
-
-        // pFile->SendRequest();
-
-        DWORD dwStatusCode;
-        pFile->QueryInfoStatusCode(dwStatusCode);
-
-        if (dwStatusCode == HTTP_STATUS_OK)
-        {
-            CString strData;
-            char szBuffer[1025];
-            int nRead;
-            while ((nRead = pFile->Read(szBuffer, 1024)) > 0)
-            {
-                szBuffer[nRead] = 0;
-                strData += CString(szBuffer);
-            }
-
-            if (!pWnd->m_isDestroying)
-            {
-                // 使用消息更新状态
-                pWnd->PostMessage(WM_UPDATE_STATUS, FALSE, 0);
-                pWnd->PostMessage(WM_UPDATE_DATA, (WPARAM) new CString(strData), 0);
-            }
-        }
-
-        // 清理资源
-        pFile->Close();
-        delete pFile;
-        session->Close();
+        return 0;
     }
-    catch (CInternetException *e)
-    {
-        e->Delete();
-        if (!pWnd->m_isDestroying)
-        {
-            pWnd->PostMessage(WM_UPDATE_STATUS, FALSE, 0);
-        }
-    }
+
+    g_data.RequestTimelineData(pFW->m_stock_id);
 
     return 0;
 }

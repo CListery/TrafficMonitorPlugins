@@ -59,7 +59,8 @@ namespace STOCK
                      highPrice(0.0),
                      lowPrice(0.0),
                      volume(0),
-                     turnover(0.0)
+                     turnover(0.0),
+                     priceLimit(0.0)
     {
       // bidLevels.resize(MAX_LEVEL);
       // askLevels.resize(MAX_LEVEL);
@@ -193,7 +194,7 @@ namespace STOCK
     void clearTimelinePoint()
     {
       auto timelineData = MakesureHistoricalData<TimelineData>(Period::TIMELINE);
-      timelineData->data.clear();
+      timelineData->Clear();
     }
 
     // 添加分时数据点
@@ -220,6 +221,7 @@ namespace STOCK
 
   public:
     void LoadRealtimeDataByJson(std::string data);
+    void LoadTimelineDataByJson(std::wstring stock_id, CString *data);
 
     void ClearRealtimeData()
     {

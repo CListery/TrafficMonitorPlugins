@@ -40,6 +40,8 @@
 #define IDC_KLINE_WIDTH_EDIT            1026
 #define IDC_EDIT2                       1027
 #define IDC_IDC_KLINE_HEIGHT_EDIT       1027
+#define IDC_KLINE_HEIGHT_EDIT           1027
+#define IDC_EDIT3                       1028
 #define ID_SETTINGS                     40003
 #define ID_UPDATE                       40004
 #define ID_OPTIONS                      40005
