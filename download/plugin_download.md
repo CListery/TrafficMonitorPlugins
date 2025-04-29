@@ -92,15 +92,15 @@
 
 显示指定股票的实时交易信息 `新浪接口`
 
-- **配置时sh表示“上证”，sz表示深证，依次类推**
+> **配置时sh表示“上证”，sz表示深证，依次类推**
 
 * 作者：[CListery](https://github.com/CListery)
 
+* 仓库地址：[TrafficMonitorPlugins](https://github.com/CListery/TrafficMonitorPlugins)
+
 * 下载链接：
 
-  GitHub: [Release Stock_V1.13 · zhongyang219/TrafficMonitorPlugins](https://github.com/zhongyang219/TrafficMonitorPlugins/releases/tag/Stock_V1.13)
-  
-  Gitee: [Stock_V1.13 · zhongyang219/TrafficMonitorPlugins - Gitee.com](https://gitee.com/zhongyang219/TrafficMonitorPlugins/releases/tag/Stock_V1.13)
+  GitHub: [Release · CListery/TrafficMonitorPlugins](https://github.com/CListery/TrafficMonitorPlugins/releases)
 
 ---
 

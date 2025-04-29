@@ -140,6 +140,10 @@ int StockItem::OnMouseEvent(MouseEventType type, int x, int y, void *hWnd, int f
             Stock::Instance().ShowFloatingWnd(hWnd, ptScreen, stock_id);
             return 1;
         }
+        else
+        {
+            MessageBox((HWND)hWnd, g_data.StringRes(IDS_UNSUPPORT_SHOW_KLINE_STOCK_TIP), g_data.StringRes(IDS_PLUGIN_NAME), MB_ICONINFORMATION | MB_OK);
+        }
     }
     default:
         break;
