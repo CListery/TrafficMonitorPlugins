@@ -136,17 +136,10 @@ void STOCK::RealTimeData::LoadAG(std::vector<std::string> data, size_t size)
   volume = {convert<Volume>(data[8])};
   turnover = {convert<Amount>(data[9])};
 
-  Price upperLimit = max(prevClosePrice * 1.01, highPrice) - prevClosePrice;
-  Price lowerLimit = min(prevClosePrice * 0.99, lowPrice) - prevClosePrice;
+  Price upperLimit = abs(highPrice - prevClosePrice);
+  Price lowerLimit = abs(lowPrice - prevClosePrice);
 
-  if (abs(upperLimit) > abs(lowerLimit))
-  {
-    priceLimit = upperLimit;
-  }
-  else
-  {
-    priceLimit = lowerLimit;
-  }
+  priceLimit = max(upperLimit, lowerLimit);
 
   // 设置买卖盘数据
   askLevels[4] = {{convert<Price>(data[29])}, {convert<Volume>(data[28])}};
