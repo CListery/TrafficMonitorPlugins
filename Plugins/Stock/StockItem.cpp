@@ -33,7 +33,7 @@ const wchar_t *StockItem::GetItemValueText() const
 {
     auto data = g_data.GetStockData(stock_id);
     static std::wstring current;
-    current = data->GetCurrentDisplay();
+    current = data->GetCurrentDisplay(g_data.m_setting_data.m_show_stock_name);
     return current.c_str();
 }
 
@@ -44,7 +44,7 @@ bool StockItem::IsCustomDraw() const
 int StockItem::GetItemWidthEx(void *hDC) const
 {
     CDC *pDC = CDC::FromHandle((HDC)hDC);
-    return std::max(pDC->GetTextExtent(g_data.GetStockData(stock_id)->GetCurrentDisplay().c_str()).cx, pDC->GetTextExtent(GetItemValueSampleText()).cx);
+    return std::max(pDC->GetTextExtent(g_data.GetStockData(stock_id)->GetCurrentDisplay(g_data.m_setting_data.m_show_stock_name).c_str()).cx, pDC->GetTextExtent(GetItemValueSampleText()).cx);
 }
 
 void StockItem::DrawItem(void *hDC, int x, int y, int w, int h, bool dark_mode)
@@ -83,7 +83,7 @@ void StockItem::DrawItem(void *hDC, int x, int y, int w, int h, bool dark_mode)
         CRect rect_name{rect};
         rect_name.right = rect_name.left + pDC->GetTextExtent(stock_name).cx;
         pDC->DrawText(stock_name, rect_name, DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
-        
+
         rect_value.left = rect_name.right;
     }
 
@@ -108,7 +108,14 @@ void StockItem::DrawItem(void *hDC, int x, int y, int w, int h, bool dark_mode)
 
 const wchar_t *StockItem::GetItemValueSampleText() const
 {
-    return L"--------: 0000000.00 00.00%";
+    if (g_data.m_setting_data.m_show_stock_name)
+    {
+        return L"--------: 0000000.00 +00.00%";
+    }
+    else
+    {
+        return L"0000000.00 +00.00%";
+    }
 }
 
 void StockItem::requestMinlineData()

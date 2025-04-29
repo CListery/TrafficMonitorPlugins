@@ -145,6 +145,7 @@ void CManagerDialog::OnBnClickedColorWithPriceCheck()
 void CManagerDialog::OnBnClickedOk()
 {
     bool stock_code_changed{g_data.m_setting_data.m_stock_codes != m_data.m_stock_codes};
+    bool show_stock_name_changed{g_data.m_setting_data.m_show_stock_name != m_data.m_show_stock_name};
     CString value;
     GetDlgItemText(IDC_KLINE_WIDTH_EDIT, value);
     m_data.m_kline_width = _ttoi(value);
@@ -155,7 +156,11 @@ void CManagerDialog::OnBnClickedOk()
     if (stock_code_changed)
     {
         Stock::Instance().SendStockInfoRequest();
-        MessageBox(g_data.StringRes(IDS_RESTART_TRAFFICMONITOR_INFO), g_data.StringRes(IDS_PLUGIN_NAME), MB_ICONINFORMATION | MB_OK);
+        MessageBox(g_data.StringRes(IDS_CHANGE_STOCK_TIP), g_data.StringRes(IDS_PLUGIN_NAME), MB_ICONINFORMATION | MB_OK);
+    }
+    else if (show_stock_name_changed)
+    {
+        MessageBox(g_data.StringRes(IDS_CHANGE_SHOW_STOCK_NAME_TIP), g_data.StringRes(IDS_PLUGIN_NAME), MB_ICONINFORMATION | MB_OK);
     }
     CDialog::OnOK();
 }

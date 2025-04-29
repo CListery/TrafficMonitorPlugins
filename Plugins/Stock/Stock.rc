@@ -245,8 +245,13 @@ BEGIN
     IDS_MENU_UPDATE_STOCK   "更新股票信息(&U)"
     IDS_ADD_STOCK           "添加股票"
     IDS_EDIT_STOCK          "编辑股票"
-    IDS_RESTART_TRAFFICMONITOR_INFO "更新股票列表后需要重新启动TrafficMonitor才能生效。"
+    IDS_CHANGE_STOCK_TIP    "更新股票列表后需要重新启动TrafficMonitor才能生效。"
     IDS_STOCK_NUM_LIMIT_WARNING "股票数量已达到上限！"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_CHANGE_SHOW_STOCK_NAME_TIP "修改隐藏或显示股票名称需要重新启动TrafficMonitor才能生效。"
 END
 
 #endif    // 中文(简体，中国) resources
@@ -403,9 +408,14 @@ BEGIN
     IDS_MENU_UPDATE_STOCK   "&Update Stock Info"
     IDS_ADD_STOCK           "Add Stock"
     IDS_EDIT_STOCK          "Edit Stock"
-    IDS_RESTART_TRAFFICMONITOR_INFO 
-                            "It is required to restart TrafficMonitor to take effect after the stock list is updated."
+    IDS_CHANGE_STOCK_TIP    "It is required to restart TrafficMonitor to take effect after the stock list is updated."
     IDS_STOCK_NUM_LIMIT_WARNING "The number of stocks has reached limit!"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_CHANGE_SHOW_STOCK_NAME_TIP 
+                            "To change the hiding or displaying of stock names, you need to restart TrafficMonitor to make it take effect."
 END
 
 #endif    // 英语(美国) resources
