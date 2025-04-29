@@ -162,7 +162,7 @@ const wchar_t *Stock::GetInfo(PluginInfoIndex index)
     case ITMPlugin::TMI_URL:
         return L"https://github.com/CListery/TrafficMonitorPlugins";
     case TMI_VERSION:
-        return L"1.2.0.0";
+        return L"1.14";
     default:
         break;
     }
