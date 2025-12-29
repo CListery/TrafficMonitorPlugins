@@ -46,6 +46,8 @@
 #define IDC_IDC_KLINE_HEIGHT_EDIT       1027
 #define IDC_KLINE_HEIGHT_EDIT           1027
 #define IDC_EDIT3                       1028
+#define IDC_DECIMAL_PLACES_COMBO        1029
+#define IDC_DECIMAL_PLACES_LABEL        1030
 #define ID_SETTINGS                     40003
 #define ID_UPDATE                       40004
 #define ID_OPTIONS                      40005
@@ -57,7 +59,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        110
 #define _APS_NEXT_COMMAND_VALUE         40007
-#define _APS_NEXT_CONTROL_VALUE         1030
+#define _APS_NEXT_CONTROL_VALUE         1031
 #define _APS_NEXT_SYMED_VALUE           103
 #endif
 #endif

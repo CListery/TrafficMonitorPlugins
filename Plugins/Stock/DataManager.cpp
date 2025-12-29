@@ -69,6 +69,7 @@ void CDataManager::LoadConfig(const std::wstring &config_dir)
     m_setting_data.m_color_with_price = ini.GetBool(L"config", L"color_with_price", true);
     m_setting_data.m_kline_width = ini.GetInt(L"config", L"kline_width", 450);
     m_setting_data.m_kline_height = ini.GetInt(L"config", L"kline_height", 210);
+    m_setting_data.m_decimal_places = ini.GetInt(L"config", L"decimal_places", 2);
 }
 
 void CDataManager::SaveConfig()
@@ -82,6 +83,7 @@ void CDataManager::SaveConfig()
         ini.WriteBool(L"config", L"color_with_price", m_setting_data.m_color_with_price);
         ini.WriteInt(L"config", L"kline_width", m_setting_data.m_kline_width);
         ini.WriteInt(L"config", L"kline_height", m_setting_data.m_kline_height);
+        ini.WriteInt(L"config", L"decimal_places", m_setting_data.m_decimal_places);
         ini.Save();
     }
 }

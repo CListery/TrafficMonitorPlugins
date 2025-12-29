@@ -26,6 +26,7 @@ void CManagerDialog::DoDataExchange(CDataExchange *pDX)
 {
     CDialog::DoDataExchange(pDX);
     DDX_Control(pDX, IDC_MGR_LIST, m_stock_listbox);
+    DDX_Control(pDX, IDC_DECIMAL_PLACES_COMBO, m_decimal_places_combo);
 }
 
 BEGIN_MESSAGE_MAP(CManagerDialog, CDialog)
@@ -74,6 +75,11 @@ BOOL CManagerDialog::OnInitDialog()
     SetDlgItemText(IDC_KLINE_WIDTH_EDIT, value);
     value.Format(_T("%d"), static_cast<int>(g_data.m_setting_data.m_kline_height));
     SetDlgItemText(IDC_KLINE_HEIGHT_EDIT, value);
+
+    // 初始化小数位数下拉框
+    m_decimal_places_combo.AddString(_T("2"));
+    m_decimal_places_combo.AddString(_T("3"));
+    m_decimal_places_combo.SetCurSel(m_data.m_decimal_places - 2);
 
     return TRUE; // return TRUE unless you set the focus to a control
                  // 异常: OCX 属性页应返回 FALSE
@@ -150,6 +156,7 @@ void CManagerDialog::OnBnClickedOk()
     m_data.m_kline_width = _ttoi(value);
     GetDlgItemText(IDC_KLINE_HEIGHT_EDIT, value);
     m_data.m_kline_height = _ttoi(value);
+    m_data.m_decimal_places = m_decimal_places_combo.GetCurSel() + 2;
     g_data.m_setting_data = m_data;
     g_data.SaveConfig();
     if (stock_code_changed)

@@ -103,7 +103,9 @@ void STOCK::RealTimeData::Load(std::wstring key, std::vector<std::string> data_a
   if (currentPrice > 0 && prevClosePrice > 0)
   {
     char buff[32];
-    sprintf_s(buff, "%.2f", currentPrice);
+    char fmt[16];
+    sprintf_s(fmt, "%%.%df", g_data.m_setting_data.m_decimal_places);
+    sprintf_s(buff, fmt, currentPrice);
     displayPrice = CCommon::StrToUnicode(buff);
 
     sprintf_s(buff, "%.2f%%", ((currentPrice - prevClosePrice) / prevClosePrice * 100));

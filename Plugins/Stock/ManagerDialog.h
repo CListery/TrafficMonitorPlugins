@@ -30,6 +30,7 @@ protected:
 public:
 	virtual BOOL OnInitDialog();
 	CListBox m_stock_listbox;
+	CComboBox m_decimal_places_combo;
 	afx_msg void OnListItemClick();
 	afx_msg void OnDelBtnClick();
 	afx_msg void OnAddBtnClick();

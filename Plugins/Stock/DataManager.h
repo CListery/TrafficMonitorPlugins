@@ -17,6 +17,7 @@ struct SettingData
     bool m_color_with_price{};          // 涨跌颜色标识
     unsigned m_kline_width;             // 走势图宽度
     unsigned m_kline_height;            // 走势图高度
+    unsigned m_decimal_places{2};       // 小数位数
 };
 
 // Stock显示数据

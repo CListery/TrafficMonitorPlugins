@@ -232,10 +232,13 @@ void CFloatingWnd::OnPaint()
         STOCK::Price priceLimit = realtimeData.priceLimit;
         float unitY = priceLimit != 0 ? halfH / (priceLimit * 100) : 0;
 
+        CString priceFmt;
+        priceFmt.Format(_T("%%.%df"), g_data.m_setting_data.m_decimal_places);
+
         memDC.SetTextColor(RGB(179, 64, 65));
         float upperLimitPrice = realtimeData.prevClosePrice + priceLimit;
         CString upperLimitTxt;
-        upperLimitTxt.Format(_T("%.2f"), upperLimitPrice);
+        upperLimitTxt.Format(priceFmt, upperLimitPrice);
         CRect upperLimitTxtRect{rect};
         upperLimitTxtRect.right = upperLimitTxtRect.left + memDC.GetTextExtent(upperLimitTxt).cx;
         memDC.DrawText(upperLimitTxt, upperLimitTxtRect, DT_TOP | DT_SINGLELINE | DT_NOPREFIX);
@@ -249,7 +252,7 @@ void CFloatingWnd::OnPaint()
         memDC.SetTextColor(RGB(44, 144, 51));
         float lowerLimitPrice = realtimeData.prevClosePrice - priceLimit;
         CString lowerLimitTxt;
-        lowerLimitTxt.Format(_T("%.2f"), lowerLimitPrice);
+        lowerLimitTxt.Format(priceFmt, lowerLimitPrice);
         CRect lowerLimitTxtRect{rect};
         lowerLimitTxtRect.right = lowerLimitTxtRect.left + memDC.GetTextExtent(lowerLimitTxt).cx;
         memDC.DrawText(lowerLimitTxt, lowerLimitTxtRect, DT_BOTTOM | DT_SINGLELINE | DT_NOPREFIX);
@@ -262,7 +265,7 @@ void CFloatingWnd::OnPaint()
 
         memDC.SetTextColor(RGB(154, 151, 157));
         CString middleTxt;
-        middleTxt.Format(_T("%.2f"), realtimeData.prevClosePrice);
+        middleTxt.Format(priceFmt, realtimeData.prevClosePrice);
         CRect middleTxtRect{rect};
         middleTxtRect.right = middleTxtRect.left + memDC.GetTextExtent(middleTxt).cx;
         memDC.DrawText(middleTxt, middleTxtRect, DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
