@@ -12,21 +12,21 @@ const wchar_t *StockItem::GetItemName() const
 {
     static std::wstring item_name;
     auto data = g_data.GetStockData(stock_id);
-    if (data->info.is_ok)
+    if (data->info.is_ok && !data->info.displayName.empty())
     {
-        if (data)
-        {
-            item_name = data->info.displayName;
-        }
-        else
-        {
-            item_name = g_data.StringRes(IDS_PLUGIN_ITEM_NAME).GetString();
-            item_name += std::to_wstring(index);
-        }
+        // 数据加载成功且有名称，显示股票名称
+        item_name = data->info.displayName;
+    }
+    else if (!data->info.is_ok && !stock_id.empty())
+    {
+        // 加载失败，显示错误信息
+        item_name = stock_id + L" " + g_data.StringRes(IDS_LOAD_FAIL).GetString();
     }
     else
     {
-        item_name = stock_id + L" " + g_data.StringRes(IDS_LOAD_FAIL).GetString();
+        // 默认情况：显示 "股票" + index
+        item_name = g_data.StringRes(IDS_PLUGIN_ITEM_NAME).GetString();
+        item_name += std::to_wstring(index);
     }
     return item_name.c_str();
 }
