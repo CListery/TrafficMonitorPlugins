@@ -66,6 +66,7 @@ private:
     CMenu m_menu;
 
     std::mutex m_wndMutex;
+    std::atomic<bool> m_isValid{true};
     CFloatingWnd *m_pFloatingWnd;
 };
 

@@ -19,6 +19,8 @@ Stock::Stock() : m_pFloatingWnd(NULL)
 
 Stock::~Stock()
 {
+    m_isValid = false;
+    std::lock_guard<std::mutex> lock(m_wndMutex);
     DestroyFloatingWnd();
 }
 
@@ -32,6 +34,9 @@ UINT Stock::ThreadCallback(LPVOID dwUser)
     AFX_MANAGE_STATE(AfxGetStaticModuleState());
     CFlagLocker flag_locker(m_instance.m_is_thread_runing);
 
+    if (!m_instance.m_isValid)
+        return 0;
+    
     if (g_data.m_setting_data.m_stock_codes.empty())
     {
         // CCommon::WriteLog(L"Stock_code not setting!", g_data.m_log_path.c_str());
@@ -104,6 +109,7 @@ void Stock::DataRequired()
         last_req_time = cur_time;
         SendStockInfoRequest();
     }
+    if (!m_isValid) return;
     std::lock_guard<std::mutex> lock(m_wndMutex);
     if (m_pFloatingWnd != NULL && ::IsWindow(m_pFloatingWnd->GetSafeHwnd()))
     {
@@ -276,6 +282,8 @@ void Stock::ShowContextMenu(CWnd *pWnd)
 
 void Stock::ShowFloatingWnd(void *hWnd, CPoint ptScreen, std::wstring stock_id)
 {
+    if (!m_isValid) return;
+    std::lock_guard<std::mutex> lock(m_wndMutex);
     // 如果已有悬浮窗，先销毁
     DestroyFloatingWnd();
 
@@ -285,7 +293,6 @@ void Stock::ShowFloatingWnd(void *hWnd, CPoint ptScreen, std::wstring stock_id)
 
     CFont *font = pWnd->GetParent()->GetFont();
 
-    std::lock_guard<std::mutex> lock(m_wndMutex);
     // 创建新的悬浮窗
     m_pFloatingWnd = new CFloatingWnd;
     if (!m_pFloatingWnd->Create(font, ptScreen, stock_id))
@@ -295,9 +302,9 @@ void Stock::ShowFloatingWnd(void *hWnd, CPoint ptScreen, std::wstring stock_id)
     }
 }
 
+// 注意：调用此函数前必须先获取 m_wndMutex 锁
 void Stock::DestroyFloatingWnd()
 {
-    std::lock_guard<std::mutex> lock(m_wndMutex);
     if (m_pFloatingWnd != NULL && ::IsWindow(m_pFloatingWnd->GetSafeHwnd()))
     {
         m_pFloatingWnd->DestroyWindow();
@@ -308,6 +315,7 @@ void Stock::DestroyFloatingWnd()
 
 void Stock::UpdateKLine()
 {
+    if (!m_isValid) return;
     std::lock_guard<std::mutex> lock(m_wndMutex);
     if (m_pFloatingWnd != NULL && ::IsWindow(m_pFloatingWnd->GetSafeHwnd()))
     {
