@@ -48,7 +48,6 @@ public:
     HICON GetIcon(UINT id);
     void ResetText();
     std::shared_ptr<StockData> GetStockData(const std::wstring &code);
-    const std::string ReadResource();
 
     // 获取最新数据
     void RequestRealtimeData();

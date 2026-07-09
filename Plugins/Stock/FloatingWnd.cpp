@@ -136,8 +136,6 @@ BOOL CFloatingWnd::Create(CFont *font, CPoint pt, std::wstring stock_id)
     m_CTransparentWnd.SetLayeredWindowAttributes(0, 0, LWA_ALPHA);
     m_CTransparentWnd.ShowWindow(SW_SHOW);
 
-    g_data.ReadResource();
-
     TRACE(L"Windows created successfully\n");
     return TRUE;
 }
