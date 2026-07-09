@@ -15,6 +15,7 @@
 #define IDI_STOCK                       109
 #define IDS_RESTART_TRAFFICMONITOR_INFO 110
 #define IDS_CHANGE_STOCK_TIP            110
+#define IDR_HTML1                       110
 #define IDS_STOCK_NUM_LIMIT_WARNING     111
 #define IDS_UNSUPPORT_SHOW_KLINE_STOCK_TIP 112
 #define IDS_LOAD_FAIL                   113
@@ -55,7 +56,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        110
+#define _APS_NEXT_RESOURCE_VALUE        111
 #define _APS_NEXT_COMMAND_VALUE         40007
 #define _APS_NEXT_CONTROL_VALUE         1030
 #define _APS_NEXT_SYMED_VALUE           103

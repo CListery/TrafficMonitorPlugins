@@ -28,6 +28,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TextReader", "Plugins\TextR
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PluginTester", "PluginTester\PluginTester.vcxproj", "{04D8EB84-0597-435B-8468-79B7BFBAF0AC}"
 	ProjectSection(ProjectDependencies) = postProject
+		{7C2EB381-947B-4596-9062-2E14211BAF48} = {7C2EB381-947B-4596-9062-2E14211BAF48}
 		{FC324049-5EF6-4561-ABC6-D2FDD68A8768} = {FC324049-5EF6-4561-ABC6-D2FDD68A8768}
 	EndProjectSection
 EndProject
@@ -44,6 +45,11 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LoudnessMeter", "Plugins\LoudnessMeter\LoudnessMeter.vcxproj", "{9BA952EB-9048-478C-810D-06E3D9B4994E}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KeyboardIndicator", "Plugins\KeyboardIndicator\KeyboardIndicator.vcxproj", "{40967109-40C4-4486-936A-1E0DF2F7F5DD}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "StockV2", "Plugins\StockV2\StockV2.vcxproj", "{7C2EB381-947B-4596-9062-2E14211BAF48}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FC324049-5EF6-4561-ABC6-D2FDD68A8768} = {FC324049-5EF6-4561-ABC6-D2FDD68A8768}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -199,6 +205,17 @@ Global
 		{40967109-40C4-4486-936A-1E0DF2F7F5DD}.Release|x64.Build.0 = Release|x64
 		{40967109-40C4-4486-936A-1E0DF2F7F5DD}.Release|x86.ActiveCfg = Release|Win32
 		{40967109-40C4-4486-936A-1E0DF2F7F5DD}.Release|x86.Build.0 = Release|Win32
+		{7C2EB381-947B-4596-9062-2E14211BAF48}.Debug|ARM64EC.ActiveCfg = Debug|x64
+		{7C2EB381-947B-4596-9062-2E14211BAF48}.Debug|ARM64EC.Build.0 = Debug|x64
+		{7C2EB381-947B-4596-9062-2E14211BAF48}.Debug|x64.ActiveCfg = Debug|x64
+		{7C2EB381-947B-4596-9062-2E14211BAF48}.Debug|x64.Build.0 = Debug|x64
+		{7C2EB381-947B-4596-9062-2E14211BAF48}.Debug|x86.ActiveCfg = Debug|Win32
+		{7C2EB381-947B-4596-9062-2E14211BAF48}.Debug|x86.Build.0 = Debug|Win32
+		{7C2EB381-947B-4596-9062-2E14211BAF48}.Release|ARM64EC.ActiveCfg = Release|x64
+		{7C2EB381-947B-4596-9062-2E14211BAF48}.Release|x64.ActiveCfg = Release|x64
+		{7C2EB381-947B-4596-9062-2E14211BAF48}.Release|x64.Build.0 = Release|x64
+		{7C2EB381-947B-4596-9062-2E14211BAF48}.Release|x86.ActiveCfg = Release|Win32
+		{7C2EB381-947B-4596-9062-2E14211BAF48}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
