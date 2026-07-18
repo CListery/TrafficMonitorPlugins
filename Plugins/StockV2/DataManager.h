@@ -12,7 +12,7 @@
 #define STOCK_DISPLAY_ITEM_MAX 99
 
 // 默认刷新频率
-constexpr unsigned int DEFAULT_STOCK_REFRESH_FREQ = 3;
+constexpr unsigned int DEFAULT_STOCK_REFRESH_FREQ = 10;
 // 默认K线图宽度
 constexpr unsigned int DEFAULT_KLINE_VIEW_W = 600;
 // 默认K线图高度
@@ -21,6 +21,12 @@ constexpr unsigned int DEFAULT_KLINE_VIEW_H = 400;
 constexpr unsigned int MAX_KLINE_VIEW_SIZE = 1000;
 // 最小K线图大小
 constexpr unsigned int MIN_KLINE_VIEW_SIZE = 100;
+// 默认小数点有效位数
+constexpr unsigned int DEFAULT_DECIMAL_PLACES = 2;
+// 最大小数点有效位数
+constexpr unsigned int MAX_DECIMAL_PLACES = 10;
+// 最小小数点有效位数
+constexpr unsigned int MIN_DECIMAL_PLACES = 0;
 
 using namespace STOCK;
 
@@ -184,6 +190,8 @@ public:
     void KLineH(int h);
     int KLineH() const;
     std::pair<int, int> KLineWH() const;
+    int DecimalPlaces() const;
+    void DecimalPlaces(int num);
 
     void InitConfig();
     void InitTasks();
@@ -222,6 +230,8 @@ private:
         bool isPriorityDisplayChanged;
         int klineW;
         int klineH;
+        // 小数点位数
+        int decimalPlaces;
     };
 
     static LDataManager m_instance;

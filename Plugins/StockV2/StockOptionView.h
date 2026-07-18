@@ -31,6 +31,7 @@ private:
     void OnListRightMenu(wxDataViewEvent& event);
     void OnMenuSelect(wxCommandEvent &e);
     void OnClose(wxCloseEvent& event);
+    void OnStockListItemActivated(wxDataViewEvent& event);
 
 private:
     wxVector<wxSharedPtr<STOCK::LStockData>> m_stock_datas;

@@ -35,7 +35,7 @@ enum
     LStockOptionView_StockListView = wxID_HIGHEST,
 };
 
-LStockOptionView::LStockOptionView(const wxString &title, const wxPoint &pos, const wxSize &size, const int& close_evt_id)
+LStockOptionView::LStockOptionView(const wxString &title, const wxPoint &pos, const wxSize &size, const int &close_evt_id)
     : wxFrame(NULL, wxID_ANY, title, pos, size,
               (wxMINIMIZE_BOX | wxMAXIMIZE_BOX | wxRESIZE_BORDER | wxSYSTEM_MENU | wxCAPTION |
                wxTAB_TRAVERSAL | wxCLOSE_BOX))
@@ -83,14 +83,16 @@ void LStockOptionView::InitUI()
 
     const int alignment = wxALIGN_LEFT & wxALIGN_MASK;
     const int col_flag = wxDATAVIEW_COL_REORDERABLE | wxDATAVIEW_COL_RESIZABLE /*| wxDATAVIEW_COL_SORTABLE*/;
+
     wxDataViewColumn *const colMarket = m_stockListCtrl->AppendTextColumn(
         "市场",
         STOCK::LStockListVM::Col_MarketText,
         wxDATAVIEW_CELL_INERT,
-        wxCOL_WIDTH_AUTOSIZE,
+        FromDIP(50),
         wxALIGN_NOT,
         col_flag);
     colMarket->GetRenderer()->SetAlignment(alignment);
+
     wxDataViewColumn *const colName = m_stockListCtrl->AppendTextColumn(
         "交易名称",
         STOCK::LStockListVM::Col_NameText,
@@ -99,6 +101,20 @@ void LStockOptionView::InitUI()
         wxALIGN_NOT,
         col_flag);
     colName->GetRenderer()->SetAlignment(alignment);
+
+    wxDataViewSpinRenderer* decimalsRenderer = new wxDataViewSpinRenderer(
+        MIN_DECIMAL_PLACES,
+        MAX_DECIMAL_PLACES,
+        wxDATAVIEW_CELL_EDITABLE);
+    wxDataViewColumn* colDecimals = new wxDataViewColumn(
+        "保留小数",
+        decimalsRenderer,
+        STOCK::LStockListVM::Col_DecimalsText,
+        FromDIP(70),
+        wxALIGN_CENTER,
+        col_flag);
+    m_stockListCtrl->AppendColumn(colDecimals);
+
     wxDataViewColumn *const colCode = m_stockListCtrl->AppendTextColumn(
         "交易代码",
         STOCK::LStockListVM::Col_CodeText,
@@ -154,10 +170,11 @@ void LStockOptionView::InitUI()
 
     settingsBoxSizer->AddSpacer(8);
 
+    int textFlags = wxALIGN_LEFT;
+    int flags = wxSP_VERTICAL | wxSP_ARROW_KEYS | wxSP_WRAP;
+
     // 走势图尺寸
     sizer = new wxBoxSizer(wxHORIZONTAL);
-    int flags = wxSP_VERTICAL | wxSP_ARROW_KEYS | wxSP_WRAP;
-    int textFlags = wxALIGN_LEFT;
     m_KLineViewWidthSpinCtrl = new wxSpinCtrl(rootPanel, wxID_ANY,
                                               wxString::Format("%d", DEFAULT_KLINE_VIEW_W),
                                               wxDefaultPosition, wxDefaultSize,
@@ -168,9 +185,9 @@ void LStockOptionView::InitUI()
                                                wxDefaultPosition, wxDefaultSize,
                                                flags | textFlags,
                                                MIN_KLINE_VIEW_SIZE, MAX_KLINE_VIEW_SIZE, DEFAULT_KLINE_VIEW_H);
-    sizer->Add(new wxStaticText(rootPanel, wxID_ANY, "行情页面宽:"), 0, wxALIGN_CENTER);
+    sizer->Add(new wxStaticText(rootPanel, wxID_ANY, "行情页面 宽:"), 0, wxALIGN_CENTER);
     sizer->Add(m_KLineViewWidthSpinCtrl, 0, wxLEFT | wxRIGHT, 0);
-    sizer->Add(new wxStaticText(rootPanel, wxID_ANY, "高:"), 0, wxALIGN_CENTER | wxLEFT, 0);
+    sizer->Add(new wxStaticText(rootPanel, wxID_ANY, " 高:"), 0, wxALIGN_CENTER | wxLEFT, 0);
     sizer->Add(m_KLineViewHeightSpinCtrl, 0, wxLEFT | wxRIGHT, 5);
     settingsBoxSizer->Add(sizer, 0);
 
@@ -224,6 +241,8 @@ void LStockOptionView::LoadOptions()
 {
     int freqIndex = COMB_FREQ_OPTS.Index(wxString::FromDouble(g_data.RealtimeRefreshFreq()));
     m_cmbRefreshFreq->Select(freqIndex);
+    m_KLineViewWidthSpinCtrl->SetValue(g_data.KLineW());
+    m_KLineViewHeightSpinCtrl->SetValue(g_data.KLineH());
     m_colorCheck->SetValue(g_data.IsDisplayColor());
     m_priorityDisplayChangedCheck->SetValue(g_data.IsPriorityDisplayChanged());
     m_isDisplayStockNameCheck->SetValue(g_data.IsDisplayName());
@@ -256,8 +275,8 @@ void LStockOptionView::BindAllEvents()
             return;
         }
         g_data.KLineW(w); });
-    m_KLineViewWidthSpinCtrl->Bind(wxEVT_COMMAND_SPINCTRL_UPDATED, [](wxSpinEvent &event)
-                                   {
+    m_KLineViewHeightSpinCtrl->Bind(wxEVT_COMMAND_SPINCTRL_UPDATED, [](wxSpinEvent &event)
+                                    {
         int h = event.GetValue();
         if (h < MIN_KLINE_VIEW_SIZE || h > MAX_KLINE_VIEW_SIZE) {
             wxMessageBox("无效高度", "错误");
@@ -495,13 +514,34 @@ void LStockOptionView::OnMenuSelect(wxCommandEvent &e)
     //}
 }
 
-void LStockOptionView::OnClose(wxCloseEvent& event)
+void LStockOptionView::OnClose(wxCloseEvent &event)
 {
     wxQueueEvent(wxApp::GetInstance(), new wxThreadEvent(wxEVT_THREAD, m_close_evt_id));
 
     event.Skip();
 }
 
+void LStockOptionView::OnStockListItemActivated(wxDataViewEvent &event)
+{
+    auto item = event.GetItem();
+    if (!item.IsOk())
+    {
+        return;
+    }
+    unsigned int column = event.GetColumn();
+    if (column != STOCK::LStockListVM::Col_DecimalsText)
+    {
+        return;
+    }
+    WXUINT row = m_solVM->GetRow(item);
+    if (row >= 0)
+    {
+        m_stockListCtrl->EditItem(item, m_stockListCtrl->GetColumn(STOCK::LStockListVM::Col_DecimalsText));
+    }
+}
+
 wxBEGIN_EVENT_TABLE(LStockOptionView, wxFrame)
-EVT_CLOSE(LStockOptionView::OnClose)
-    wxEND_EVENT_TABLE()
+    EVT_CLOSE(LStockOptionView::OnClose)
+
+    EVT_DATAVIEW_ITEM_ACTIVATED(LStockOptionView_StockListView, LStockOptionView::OnStockListItemActivated)
+wxEND_EVENT_TABLE()

@@ -43,9 +43,9 @@ CString LStockItem::GetDisplayContent(wxSharedPtr<STOCK::LStockData> data, bool 
     wxString content;
     if (include_name)
         content = content + data->name + ": ";
-    content += g_data.IsPriorityDisplayChanged() ? data->displayPrice : data->GetCurrentPrice();
+    content += g_data.IsPriorityDisplayChanged() ? data->GetChangePrice() : data->GetCurrentPrice();
     content += " ";
-    content += data->displayFluctuation;
+    content += data->changeFluctuation;
     return content.wc_str();
 }
 
@@ -107,7 +107,7 @@ void LStockItem::DrawItem(void* hDC, int x, int y, int w, int h, bool dark_mode)
     // 绘制数值
     if (g_data.IsDisplayColor())
     {
-        bool isUp = data->displayFluctuation.find('+') != wxString::npos;
+        bool isUp = data->changeFluctuation.find('+') != wxString::npos;
         if (isUp)
             pDC->SetTextColor(color_red);
         else

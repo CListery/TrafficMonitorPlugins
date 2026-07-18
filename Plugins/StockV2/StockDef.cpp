@@ -1,11 +1,11 @@
 ﻿#include "pch.h"
 #include "StockDef.h"
 #include <utilities/yyjson/yyjson.h>
+#include <regex>
 
 namespace STOCK
 {
-    std::tuple<wxString, wxString> difference(const wxString &n1, const wxString &n2,
-                                              const int decimals_1 = 0, const int decimals_2 = 0)
+    std::tuple<wxString, wxString> difference(const wxString &n1, const wxString &n2, const int decimals_1 = 0, const int decimals_2 = 0)
     {
         int n1_decimals;
         int n2_decimals;
@@ -124,93 +124,77 @@ namespace STOCK
         }
     }
 
+    /**
+     * HQ_DataApps.js#DataCenter.prototype._handle
+     */
     void LStockData::LoadByRealtimeData(const wxString &code, const wxString &raw_data)
     {
         this->code = code;
-        this->market = GetMarketByCode(code);
         this->name = code + ": " + UtilResHlp.StringRes(IDS_LOADING);
 
         wxArrayString latest_data_arr = UtilStringHlp::split(raw_data, ",");
 
-        if (this->market == "A" || this->market == "SI")
+        switch (getMarket(code))
         {
+        case GetMarketType::GetMarketType_A:
             StockObj(code, latest_data_arr);
-        }
-        else if (this->market == "US")
-        {
+            break;
+        case GetMarketType::GetMarketType_US:
             USStockObj(code, latest_data_arr);
-        }
-        else if (this->market == "HF")
-        {
+            break;
+        case GetMarketType::GetMarketType_HF:
             FuturesObj(code, latest_data_arr);
-        }
-        else if (this->market == "NF")
-        {
+            break;
+        case GetMarketType::GetMarketType_NF:
             NffuturesObj(code, latest_data_arr);
-        }
-        else if (this->market == "DINIW")
-        {
+            break;
+        case GetMarketType::GetMarketType_SI:
+            StockObj(code, latest_data_arr);
+            break;
+        case GetMarketType::GetMarketType_DINIW:
             DINIWObj(code, latest_data_arr);
-        }
-        else if (this->market == "FX")
-        {
+            break;
+        case GetMarketType::GetMarketType_FX:
             ForexObj(code, latest_data_arr);
-        }
-        else if (this->market == "B")
-        {
+            break;
+        case GetMarketType::GetMarketType_B:
             GlobalObj(code, latest_data_arr);
-        }
-        else if (this->market == "SB")
-        {
-            SBstockObj(code, latest_data_arr);
-        }
-        else if (this->market == "HK")
-        {
-            HkstockObj(code, latest_data_arr);
-        }
-        else if (this->market == "RTHK")
-        {
-            HkstockObj(code, latest_data_arr);
-        }
-        else if (this->market == "GlobalBD")
-        {
-            GlobalBDObj(code, latest_data_arr);
-        }
-        else if (this->market == "BT")
-        {
-            BitcoinObj(code, latest_data_arr);
-        }
-        else if (this->market == "FUND")
-        {
-            FUNDObj(code, latest_data_arr);
-        }
-        else if (this->market == "ZNB")
-        {
-            ZNBGBObj(code, latest_data_arr);
-        }
-        else if (this->market == "BLOCK")
-        {
-            BlockIndexObj(code, latest_data_arr);
-        }
-        else if (this->market == "LSE")
-        {
+            break;
+        case GetMarketType::GetMarketType_LSE:
             UKLSEObj(code, latest_data_arr);
-        }
-        else if (this->market == "GOODS")
-        {
+            break;
+        case GetMarketType::GetMarketType_GOODS:
             GOODSObj(code, latest_data_arr);
-        }
-        else if (this->market == "MSCI")
-        {
+            break;
+        case GetMarketType::GetMarketType_ZNB:
+            ZNBGBObj(code, latest_data_arr);
+            break;
+        case GetMarketType::GetMarketType_HK:
+            HkstockObj(code, latest_data_arr);
+            break;
+        case GetMarketType::GetMarketType_SB:
+            SBstockObj(code, latest_data_arr);
+            break;
+        case GetMarketType::GetMarketType_BT:
+            BitcoinObj(code, latest_data_arr);
+            break;
+        case GetMarketType::GetMarketType_FUND:
+            FUNDObj(code, latest_data_arr);
+            break;
+        case GetMarketType::GetMarketType_MSCI:
             MSCIObj(code, latest_data_arr);
-        }
-        else if (this->market == "GlobalBD")
-        {
+            break;
+        case GetMarketType::GetMarketType_RTHK:
+            HkstockObj(code, latest_data_arr);
+            break;
+        case GetMarketType::GetMarketType_BLOCK:
+            BlockIndexObj(code, latest_data_arr);
+            break;
+        case GetMarketType::GetMarketType_GlobalBD:
             GlobalBDObj(code, latest_data_arr);
-        }
-        else
-        {
-            // TODO: reset
+            break;
+        default:
+            break;
         }
     }
 
@@ -311,8 +295,6 @@ namespace STOCK
         }
 
         LoadUrl(codes[2], codes[3]);
-
-        market = STOCK::GetMarketByCode(code);
     }
 
     void LStockData::LoadUrl(const wxString &t, const wxString &s)
@@ -422,7 +404,7 @@ namespace STOCK
         bool v142 = (p140.find("sz15") == 0 || p140.find("sz16") == 0 || p140.find("sz18") == 0) //
                     || (p140.find("sh50") == 0 || p140.find("sh51") == 0 || p140.find("sh52") == 0);
 
-        int v89 = 2;
+        int v89 = this->decimals;
 
         double v74 = UtilStringHlp::parseDouble(v111[3]) == 0 ? UtilStringHlp::parseDouble(v111[2]) : UtilStringHlp::parseDouble(v111[3]);
         double v133 = UtilStringHlp::selectValid(UtilStringHlp::parseDouble(v124[11]), UtilStringHlp::parseDouble(v124[21]), UtilStringHlp::parseDouble(v124[2]));
@@ -459,7 +441,6 @@ namespace STOCK
 
         priceLimit = max(upperLimit, lowerLimit);
 
-        // TODO: 自定义小数点位数
         auto vS = difference(wxString::FromDouble(v74), v111[2], v89);
         wxString v76 = std::get<0>(vS);
         wxString v75 = std::get<1>(vS);
@@ -469,18 +450,18 @@ namespace STOCK
         {
             if (!v136.empty())
             {
-                displayPrice = v136;
+                changePrice = v136;
             }
             else
             {
-                displayPrice = v76;
+                changePrice = v76;
             }
         }
         else
         {
-            displayPrice = v76;
+            changePrice = v76;
         }
-        displayFluctuation = v75;
+        changeFluctuation = v75;
     }
 
     void LStockData::USStockObj(wxString p161, wxArrayString v190)
@@ -492,11 +473,11 @@ namespace STOCK
             this->name = UtilResHlp.StringRes(IDS_LOAD_FAIL);
         }
 
-        open = UtilStringHlp::toFixed(v190[5]);
-        prevclose = UtilStringHlp::toFixed(v190[26]);
-        price = UtilStringHlp::toFixed(v190[1], 3);
-        high = UtilStringHlp::toFixed(v190[6]);
-        low = UtilStringHlp::toFixed(v190[7]);
+        open = UtilStringHlp::toFixed(v190[5], this->decimals);
+        prevclose = UtilStringHlp::toFixed(v190[26], this->decimals);
+        price = UtilStringHlp::toFixed(v190[1], this->decimals);
+        high = UtilStringHlp::toFixed(v190[6], this->decimals);
+        low = UtilStringHlp::toFixed(v190[7], this->decimals);
 
         totalVolume_i = NAN;
         totalAmount_i = NAN;
@@ -506,32 +487,32 @@ namespace STOCK
 
         priceLimit = max(upperLimit, lowerLimit);
 
-        // TODO: 自定义小数点位数
-        auto vS6 = difference(v190[1], v190[26], 3, 2);
+        auto vS6 = difference(v190[1], v190[26], this->decimals, 2);
         wxString v184 = std::get<0>(vS6);
         wxString v183 = std::get<1>(vS6);
 
-        displayPrice = v184;
-        displayFluctuation = v183;
+        changePrice = v184;
+        changeFluctuation = v183;
     }
 
     void LStockData::FuturesObj(wxString p168, wxArrayString v211)
     {
         // 股票名称
-        this->name = v211[0];
+        this->name = v211[13];
         if (this->name.empty())
         {
             this->name = UtilResHlp.StringRes(IDS_LOAD_FAIL);
         }
 
-        int v208 = p168.find("EC") != wxString::npos             //
-                           || p168.find("BP") != wxString::npos  //
-                           || p168.find("JY") != wxString::npos  //
-                           || p168.find("CD") != wxString::npos  //
-                           || p168.find("SF") != wxString::npos  //
-                           || p168.find("DXF") != wxString::npos //
-                       ? 4
-                       : (UtilStringHlp::parseInt(v211[0]) < 100 ? 3 : 2);
+        // int v208 = p168.find("EC") != wxString::npos             //
+        //                    || p168.find("BP") != wxString::npos  //
+        //                    || p168.find("JY") != wxString::npos  //
+        //                    || p168.find("CD") != wxString::npos  //
+        //                    || p168.find("SF") != wxString::npos  //
+        //                    || p168.find("DXF") != wxString::npos //
+        //                ? 4
+        //                : (UtilStringHlp::parseInt(v211[0]) < 100 ? 3 : 2);
+        const int v208 = this->decimals;
 
         open = UtilStringHlp::toFixed(v211[8], v208);
         prevclose = UtilStringHlp::toFixed(v211[7], v208);
@@ -552,8 +533,8 @@ namespace STOCK
         wxString v206 = std::get<0>(vS1);
         wxString v205 = std::get<1>(vS1);
 
-        displayPrice = v206;
-        displayFluctuation = v205;
+        changePrice = v206;
+        changeFluctuation = v205;
     }
 
     void LStockData::NffuturesObj(wxString p170, wxArrayString v217)
@@ -565,11 +546,11 @@ namespace STOCK
             this->name = UtilResHlp.StringRes(IDS_LOAD_FAIL);
         }
 
-        open = UtilStringHlp::toFixed(v217[2]);
-        prevclose = UtilStringHlp::toFixed(v217[10]);
-        price = UtilStringHlp::toFixed(v217[8]);
-        high = UtilStringHlp::toFixed(v217[3]);
-        low = UtilStringHlp::toFixed(v217[4]);
+        open = UtilStringHlp::toFixed(v217[2], this->decimals);
+        prevclose = UtilStringHlp::toFixed(v217[10], this->decimals);
+        price = UtilStringHlp::toFixed(v217[8], this->decimals);
+        high = UtilStringHlp::toFixed(v217[3], this->decimals);
+        low = UtilStringHlp::toFixed(v217[4], this->decimals);
 
         // totalVolume: UtilStringHlp::parseInt(v217[14]) || "--",
         totalVolume_i = NAN;
@@ -580,29 +561,28 @@ namespace STOCK
 
         priceLimit = max(upperLimit, lowerLimit);
 
-        // TODO: 自定义小数点位数
-        auto vS1 = difference(v217[8], v217[10]);
+        auto vS1 = difference(v217[8], v217[10], this->decimals);
         wxString v213 = std::get<0>(vS1);
         wxString v212 = std::get<1>(vS1);
 
-        displayPrice = v213;
-        displayFluctuation = v212;
+        changePrice = v213;
+        changeFluctuation = v212;
     }
 
     void LStockData::DINIWObj(wxString p175, wxArrayString v235)
     {
         // 股票名称
-        this->name = v235[0];
+        this->name = v235[9];
         if (this->name.empty())
         {
             this->name = UtilResHlp.StringRes(IDS_LOAD_FAIL);
         }
 
-        open = UtilStringHlp::toFixed(v235[5]);
-        prevclose = UtilStringHlp::toFixed(v235[3], 4);
-        price = UtilStringHlp::toFixed(v235[8], 4);
-        high = UtilStringHlp::toFixed(v235[6]);
-        low = UtilStringHlp::toFixed(v235[7]);
+        open = UtilStringHlp::toFixed(v235[5], this->decimals);
+        prevclose = UtilStringHlp::toFixed(v235[3], this->decimals);
+        price = UtilStringHlp::toFixed(v235[8], this->decimals);
+        high = UtilStringHlp::toFixed(v235[6], this->decimals);
+        low = UtilStringHlp::toFixed(v235[7], this->decimals);
 
         totalVolume_i = NAN;
         totalAmount_i = NAN;
@@ -612,26 +592,25 @@ namespace STOCK
 
         priceLimit = max(upperLimit, lowerLimit);
 
-        // TODO: 自定义小数点位数
-        auto vS7 = difference(v235[8], v235[3], 4);
+        auto vS7 = difference(v235[8], v235[3], this->decimals);
         wxString v232 = std::get<0>(vS7);
         wxString v231 = std::get<1>(vS7);
 
-        displayPrice = v232;
-        displayFluctuation = v231;
+        changePrice = v232;
+        changeFluctuation = v231;
     }
 
     void LStockData::ForexObj(wxString p177, wxArrayString v243)
     {
         // 股票名称
-        this->name = v243[0];
+        this->name = v243[9];
         if (this->name.empty())
         {
             this->name = UtilResHlp.StringRes(IDS_LOAD_FAIL);
         }
 
-        int vLN4 = UtilStringHlp::parseInt(v243[8]) < 10 ? 4 : UtilStringHlp::parseInt(v243[8]) < 100 ? 3
-                                                                                                      : 2;
+        // int vLN4 = UtilStringHlp::parseInt(v243[8]) < 10 ? 4 : UtilStringHlp::parseInt(v243[8]) < 100 ? 3 : 2;
+        const int vLN4 = this->decimals;
 
         open = UtilStringHlp::toFixed(v243[5], vLN4);
         prevclose = UtilStringHlp::toFixed(v243[3], vLN4);
@@ -647,19 +626,18 @@ namespace STOCK
 
         priceLimit = max(upperLimit, lowerLimit);
 
-        // TODO: 自定义小数点位数
-        auto vS8 = difference(v243[8], v243[3], 4);
+        auto vS8 = difference(v243[8], v243[3], vLN4);
         wxString v237 = std::get<0>(vS8);
         wxString v236 = std::get<1>(vS8);
 
-        displayPrice = v237;
-        displayFluctuation = v236;
+        changePrice = v237;
+        changeFluctuation = v236;
     }
 
     void LStockData::GlobalObj(wxString p179, wxArrayString v247)
     {
         // 股票名称
-        this->name = v247[0];
+        this->name = f24(v247[0]);
         if (this->name.empty())
         {
             this->name = UtilResHlp.StringRes(IDS_LOAD_FAIL);
@@ -667,7 +645,7 @@ namespace STOCK
 
         open = NAN;
         prevclose = NAN;
-        price = UtilStringHlp::toFixed(v247[1]);
+        price = UtilStringHlp::toFixed(v247[1], this->decimals);
         high = NAN;
         low = NAN;
 
@@ -676,9 +654,10 @@ namespace STOCK
 
         priceLimit = NAN;
 
-        // TODO: 自定义小数点位数
-        displayFluctuation = UtilStringHlp::parseDouble(v247[3]) > 0 ? "+" + v247[3] + "%" : v247[3] + "%";
-        displayPrice = UtilStringHlp::parseDouble(v247[2]) > 0 ? "+" + v247[2] : v247[2];
+        changeFluctuation = UtilStringHlp::parseDouble(v247[3]) > 0 ? "+" + v247[3] + "%" : v247[3] + "%";
+        double diffPrice = UtilStringHlp::parseDouble(v247[2]);
+        wxString diffPriceStr = UtilStringHlp::toFixed(diffPrice, this->decimals);
+        changePrice = diffPrice > 0 ? "+" + diffPriceStr : diffPriceStr;
     }
 
     void LStockData::SBstockObj(wxString p187, wxArrayString v274)
@@ -690,11 +669,11 @@ namespace STOCK
             this->name = UtilResHlp.StringRes(IDS_LOAD_FAIL);
         }
 
-        open = UtilStringHlp::toFixed(v274[1]);
-        prevclose = UtilStringHlp::toFixed(v274[2]);
-        price = UtilStringHlp::toFixed(v274[3]);
-        high = UtilStringHlp::toFixed(v274[4]);
-        low = UtilStringHlp::toFixed(v274[5]);
+        open = UtilStringHlp::toFixed(v274[1], this->decimals);
+        prevclose = UtilStringHlp::toFixed(v274[2], this->decimals);
+        price = UtilStringHlp::toFixed(v274[3], this->decimals);
+        high = UtilStringHlp::toFixed(v274[4], this->decimals);
+        low = UtilStringHlp::toFixed(v274[5], this->decimals);
 
         totalVolume_i = NAN;
         totalAmount_i = NAN;
@@ -702,11 +681,11 @@ namespace STOCK
         priceLimit = NAN;
 
         // TODO: 自定义小数点位数
-        auto vS11 = difference(v274[3], v274[2]);
+        auto vS11 = difference(v274[3], v274[2], this->decimals);
         wxString v270 = std::get<0>(vS11);
         wxString v269 = std::get<1>(vS11);
-        displayFluctuation = v269;
-        displayPrice = v270;
+        changeFluctuation = v269;
+        changePrice = v270;
     }
 
     void LStockData::HkstockObj(wxString p183, wxArrayString v259)
@@ -722,63 +701,61 @@ namespace STOCK
 
         if (UtilStringHlp::TimeToSecond(v259[18]) >= UtilStringHlp::TimeToSecond("09:00:00") && UtilStringHlp::TimeToSecond(v259[18]) < UtilStringHlp::TimeToSecond("09:20:00"))
         {
-            v268 = UtilStringHlp::toFixed(v259[9], 3);
+            v268 = UtilStringHlp::toFixed(v259[9], this->decimals);
         }
         else
         {
-            v268 = UtilStringHlp::toFixed(v259[6], 3);
+            v268 = UtilStringHlp::toFixed(v259[6], this->decimals);
         }
 
         if (!UtilStringHlp::isValidNum(v268))
         {
-            v268 = UtilStringHlp::toFixed(v259[3], 3);
+            v268 = UtilStringHlp::toFixed(v259[3], this->decimals);
         }
 
-        open = UtilStringHlp::toFixed(v259[2], 3);
-        prevclose = UtilStringHlp::toFixed(v259[3], 3);
+        open = UtilStringHlp::toFixed(v259[2], this->decimals);
+        prevclose = UtilStringHlp::toFixed(v259[3], this->decimals);
         price = v268;
-        high = UtilStringHlp::toFixed(v259[4], 3);
-        low = UtilStringHlp::toFixed(v259[5], 3);
+        high = UtilStringHlp::toFixed(v259[4], this->decimals);
+        low = UtilStringHlp::toFixed(v259[5], this->decimals);
 
         totalVolume_i = NAN;
         totalAmount_i = NAN;
 
         priceLimit = NAN;
 
-        // TODO: 自定义小数点位数
-        auto vS10 = difference(wxString::FromDouble(v268), v259[3], 3);
+        auto vS10 = difference(wxString::FromDouble(v268), v259[3], this->decimals);
         wxString v254 = std::get<0>(vS10);
         wxString v253 = std::get<1>(vS10);
-        displayFluctuation = v253;
-        displayPrice = v254;
+        changeFluctuation = v253;
+        changePrice = v254;
     }
 
     void LStockData::BitcoinObj(wxString p189, wxArrayString v280)
     {
         // 股票名称
-        this->name = v280[1];
+        this->name = v280[9];
         if (this->name.empty())
         {
             this->name = UtilResHlp.StringRes(IDS_LOAD_FAIL);
         }
 
-        open = UtilStringHlp::toFixed(v280[5], 4);
-        prevclose = UtilStringHlp::toFixed(v280[3], 4);
-        price = UtilStringHlp::toFixed(v280[8], 4);
-        high = UtilStringHlp::toFixed(v280[6], 4);
-        low = UtilStringHlp::toFixed(v280[7], 4);
+        open = UtilStringHlp::toFixed(v280[5], this->decimals);
+        prevclose = UtilStringHlp::toFixed(v280[3], this->decimals);
+        price = UtilStringHlp::toFixed(v280[8], this->decimals);
+        high = UtilStringHlp::toFixed(v280[6], this->decimals);
+        low = UtilStringHlp::toFixed(v280[7], this->decimals);
 
         totalVolume_i = NAN;
         totalAmount_i = NAN;
 
         priceLimit = NAN;
 
-        // TODO: 自定义小数点位数
-        auto vS12 = difference(v280[8], v280[3], 4);
+        auto vS12 = difference(v280[8], v280[3], this->decimals);
         wxString v276 = std::get<0>(vS12);
         wxString v275 = std::get<1>(vS12);
-        displayFluctuation = v275;
-        displayPrice = v276;
+        changeFluctuation = v275;
+        changePrice = v276;
     }
 
     void LStockData::FUNDObj(wxString p192, wxArrayString v281)
@@ -790,8 +767,8 @@ namespace STOCK
         }
 
         open = NAN;
-        prevclose = UtilStringHlp::parseDouble(v281[3]);
-        price = UtilStringHlp::toFixed(v281[1], 4);
+        prevclose = UtilStringHlp::toFixed(v281[3], this->decimals);
+        price = UtilStringHlp::toFixed(v281[1], this->decimals);
         high = NAN;
         low = NAN;
 
@@ -804,10 +781,9 @@ namespace STOCK
         double v284 = UtilStringHlp::parseDouble(v281[3]);
         if (UtilStringHlp::isValidNum(v283) && UtilStringHlp::isValidNum(v284))
         {
-            // TODO: 自定义小数点位数
             wxString vF43 = f43(v283, v284);
-            displayFluctuation = vF43 + UtilStringHlp::toFixed((v283 / v284 - 1) * 100, 2) + "%";
-            displayPrice = UtilStringHlp::toFixed(v283 - v284, 3);
+            changeFluctuation = vF43 + UtilStringHlp::toFixed((v283 / v284 - 1) * 100, 2) + "%";
+            changePrice = UtilStringHlp::toFixed(v283 - v284, this->decimals);
         }
     }
 
@@ -819,23 +795,24 @@ namespace STOCK
             this->name = UtilResHlp.StringRes(IDS_LOAD_FAIL);
         }
 
-        open = UtilStringHlp::toFixed(v252[8]);
-        prevclose = UtilStringHlp::toFixed(v252[9]);
-        price = UtilStringHlp::toFixed(v252[1]);
-        high = UtilStringHlp::toFixed(v252[10]);
-        low = UtilStringHlp::toFixed(v252[11]);
+        open = UtilStringHlp::toFixed(v252[8], this->decimals);
+        prevclose = UtilStringHlp::toFixed(v252[9], this->decimals);
+        price = UtilStringHlp::toFixed(v252[1], this->decimals);
+        high = UtilStringHlp::toFixed(v252[10], this->decimals);
+        low = UtilStringHlp::toFixed(v252[11], this->decimals);
 
         totalVolume_i = NAN;
         totalAmount_i = NAN;
 
         priceLimit = NAN;
 
-        // TODO: 自定义小数点位数
         wxString v248 = UtilStringHlp::parseDouble(v252[3]) > 0 ? "+" + v252[3] + "%" : v252[3] + "%";
-        wxString v249 = UtilStringHlp::parseDouble(v252[2]) > 0 ? "+" + v252[2] : v252[2];
 
-        displayFluctuation = v248;
-        displayPrice = v249;
+        double diffPrice = UtilStringHlp::parseDouble(v252[2]);
+        wxString diffPriceStr = UtilStringHlp::toFixed(diffPrice, this->decimals);
+
+        changeFluctuation = v248;
+        changePrice = diffPrice > 0 ? "+" + diffPriceStr : diffPriceStr;
     }
 
     void LStockData::BlockIndexObj(wxString p181, wxArrayString v164)
@@ -846,23 +823,22 @@ namespace STOCK
             this->name = UtilResHlp.StringRes(IDS_LOAD_FAIL);
         }
 
-        open = UtilStringHlp::toFixed(v164[1], 2);
-        prevclose = UtilStringHlp::toFixed(v164[2], 2);
-        price = UtilStringHlp::toFixed(v164[3], 2);
-        high = UtilStringHlp::toFixed(v164[4], 2);
-        low = UtilStringHlp::toFixed(v164[5], 2);
+        open = UtilStringHlp::toFixed(v164[1], this->decimals);
+        prevclose = UtilStringHlp::toFixed(v164[2], this->decimals);
+        price = UtilStringHlp::toFixed(v164[3], this->decimals);
+        high = UtilStringHlp::toFixed(v164[4], this->decimals);
+        low = UtilStringHlp::toFixed(v164[5], this->decimals);
 
         totalVolume_i = NAN;
         totalAmount_i = NAN;
 
         priceLimit = NAN;
 
-        // TODO: 自定义小数点位数
-        auto vS4 = difference(v164[3], v164[2], 2);
+        auto vS4 = difference(v164[3], v164[2], this->decimals);
         wxString v167 = std::get<0>(vS4);
         wxString v168 = std::get<1>(vS4);
-        displayFluctuation = v168;
-        displayPrice = v167;
+        changeFluctuation = v168;
+        changePrice = v167;
     }
 
     void LStockData::UKLSEObj(wxString p202, wxArrayString v293)
@@ -873,18 +849,17 @@ namespace STOCK
             this->name = UtilResHlp.StringRes(IDS_LOAD_FAIL);
         }
 
-        open = UtilStringHlp::toFixed(v293[3], 3);
-        prevclose = UtilStringHlp::toFixed(v293[5], 3);
-        price = UtilStringHlp::toFixed(v293[1], 3);
-        high = UtilStringHlp::toFixed(v293[2], 3);
-        low = UtilStringHlp::toFixed(v293[4], 3);
+        open = UtilStringHlp::toFixed(v293[3], this->decimals);
+        prevclose = UtilStringHlp::toFixed(v293[5], this->decimals);
+        price = UtilStringHlp::toFixed(v293[1], this->decimals);
+        high = UtilStringHlp::toFixed(v293[2], this->decimals);
+        low = UtilStringHlp::toFixed(v293[4], this->decimals);
 
         totalVolume_i = NAN;
         totalAmount_i = NAN;
 
         priceLimit = NAN;
 
-        // TODO: 自定义小数点位数
         double vParseFloat3 = UtilStringHlp::parseDouble(v293[5]);
         double v298 = UtilStringHlp::parseDouble(v293[1]);
         if (!UtilStringHlp::isValidNum(v298))
@@ -892,23 +867,24 @@ namespace STOCK
             v298 = vParseFloat3;
         }
 
-        auto vS13 = difference(UtilStringHlp::toFixed(v298), UtilStringHlp::toFixed(vParseFloat3), 3);
+        auto vS13 = difference(UtilStringHlp::toFixed(v298), UtilStringHlp::toFixed(vParseFloat3), this->decimals);
         wxString v287 = std::get<0>(vS13);
         wxString v286 = std::get<1>(vS13);
-        displayFluctuation = v286;
-        displayPrice = v287;
+        changeFluctuation = v286;
+        changePrice = v287;
     }
 
     void LStockData::GOODSObj(wxString p166, wxArrayString v204)
     {
         // 股票名称
-        this->name = v204[0];
+        this->name = v204[13];
         if (this->name.empty())
         {
             this->name = UtilResHlp.StringRes(IDS_LOAD_FAIL);
         }
 
-        int v201 = UtilStringHlp::parseInt(v204[0]) < 100 ? 3 : 2;
+        // int v201 = UtilStringHlp::parseInt(v204[0]) < 100 ? 3 : 2;
+        const int v201 = this->decimals;
 
         open = UtilStringHlp::toFixed(v204[8], v201);
         prevclose = UtilStringHlp::toFixed(v204[7], v201);
@@ -924,14 +900,13 @@ namespace STOCK
 
         priceLimit = max(upperLimit, lowerLimit);
 
-        // TODO: 自定义小数点位数
         auto vS1 = difference(v204[0], v204[7], v201);
         wxString v199 = std::get<0>(vS1);
         auto vS2 = difference(v204[0], v204[7]);
         wxString v198 = std::get<1>(vS2);
 
-        displayPrice = v199;
-        displayFluctuation = v198;
+        changePrice = v199;
+        changeFluctuation = v198;
     }
 
     void LStockData::MSCIObj(wxString p205, wxArrayString v300)
@@ -943,11 +918,11 @@ namespace STOCK
             this->name = UtilResHlp.StringRes(IDS_LOAD_FAIL);
         }
 
-        open = UtilStringHlp::toFixed(v300[21], 2);
-        prevclose = UtilStringHlp::toFixed(v300[22], 2);
-        price = UtilStringHlp::selectValid(UtilStringHlp::toFixed(v300[4], 2), UtilStringHlp::toFixed(v300[22], 2));
-        high = UtilStringHlp::toFixed(v300[19], 2);
-        low = UtilStringHlp::toFixed(v300[20], 2);
+        open = UtilStringHlp::toFixed(v300[21], this->decimals);
+        prevclose = UtilStringHlp::toFixed(v300[22], this->decimals);
+        price = UtilStringHlp::selectValid(UtilStringHlp::toFixed(v300[4], this->decimals), UtilStringHlp::toFixed(v300[22], this->decimals));
+        high = UtilStringHlp::toFixed(v300[19], this->decimals);
+        low = UtilStringHlp::toFixed(v300[20], this->decimals);
 
         totalVolume_i = NAN;
         totalAmount_i = NAN;
@@ -957,7 +932,6 @@ namespace STOCK
 
         priceLimit = max(upperLimit, lowerLimit);
 
-        // TODO: 自定义小数点位数
         double v301 = UtilStringHlp::parseDouble(v300[22]);
         double v302 = UtilStringHlp::parseDouble(v300[4]);
         if (!UtilStringHlp::isValidNum(v302))
@@ -967,8 +941,8 @@ namespace STOCK
         double v303 = v302 - v301;
         double v304 = v303 * 100 / v301;
 
-        displayPrice = UtilStringHlp::toFixed(v303, 2);
-        displayFluctuation = UtilStringHlp::toFixed(v304, 2) + "%";
+        changePrice = UtilStringHlp::toFixed(v303, this->decimals);
+        changeFluctuation = UtilStringHlp::toFixed(v304, 2) + "%";
     }
 
     void LStockData::GlobalBDObj(wxString p207, wxArrayString v308)
@@ -980,8 +954,8 @@ namespace STOCK
             this->name = UtilResHlp.StringRes(IDS_LOAD_FAIL);
         }
 
-        double vNumber = UtilStringHlp::toFixed(v308[2], 3);
-        double v309 = UtilStringHlp::toFixed(v308[3], 3);
+        double vNumber = UtilStringHlp::toFixed(v308[2], this->decimals);
+        double v309 = UtilStringHlp::toFixed(v308[3], this->decimals);
         if (!UtilStringHlp::isValidNum(v309))
         {
             v309 = vNumber;
@@ -989,11 +963,11 @@ namespace STOCK
         double v310 = v309 - vNumber;
         double v311 = v310 * 100 / abs(vNumber);
 
-        open = UtilStringHlp::toFixed(v308[1]);
+        open = UtilStringHlp::toFixed(v308[1], this->decimals);
         prevclose = vNumber;
         price = v309;
-        high = UtilStringHlp::toFixed(v308[4]);
-        low = UtilStringHlp::toFixed(v308[5]);
+        high = UtilStringHlp::toFixed(v308[4], this->decimals);
+        low = UtilStringHlp::toFixed(v308[5], this->decimals);
 
         totalVolume_i = NAN;
         totalAmount_i = NAN;
@@ -1003,92 +977,261 @@ namespace STOCK
 
         priceLimit = max(upperLimit, lowerLimit);
 
-        // TODO: 自定义小数点位数
-        displayPrice = UtilStringHlp::toFixed(v310, 3);
-        displayFluctuation = UtilStringHlp::toFixed(v311, 3) + "%";
+        changePrice = UtilStringHlp::toFixed(v310, this->decimals);
+        changeFluctuation = UtilStringHlp::toFixed(v311, 3) + "%";
     }
 
-    wxString GetMarketByCode(const wxString &code)
+    /**
+     * sf_sdk.js#market
+     */
+    MarketType market(const wxString &code)
     {
-        if (code.find("sh") == 0 || code.find("sz") == 0 || (code.size() > 2 && code.find("bj") == 0))
+        const std::string s = std::string(code.ToUTF8());
+
+        static const std::regex reRepo(R"(^(sh204\d{3}|sz1318\d{2})$)");
+        static const std::regex reSI(R"(^si\w+$)");
+        static const std::regex reCNStock(R"(^s[hz]\d{6}$)");
+        static const std::regex reBJ(R"(^bj\w+)");
+        static const std::regex reGN(R"(^(GN|gn\d{7})$)");
+        static const std::regex reHY(R"(^(HY|hy\d{7})$)");
+        static const std::regex reDY(R"(^(DY|dy\d{7})$)");
+        static const std::regex reCNI(R"(^s[hz]\d{6}_i$)");
+        static const std::regex reSBOTC(R"(^sb[48]\d{5}$)");
+        static const std::regex reOTC48(R"(^[48]\d{5}$)");
+        static const std::regex reOTCPrefix(R"(^otc_\d{6}$)");
+        static const std::regex reBTC(R"(^btc_\w+)");
+        static const std::regex reUS(R"(^gb_.+$)");
+        static const std::regex reHKPreIPO(R"(^(hk|rt_hk)\w+_preipo$)");
+        static const std::regex reHK(R"(^(hk|rt_hk)\w+)");
+        static const std::regex reHF(R"(^hf_\w+)");
+        static const std::regex reGlobalBD(R"(^globalbd_.+$)");
+        static const std::regex reLSE(R"(^lse_.+$)");
+        static const std::regex reNF(R"(^nf_\w+)");
+        static const std::regex reGOODS(R"(^gds_\w+)");
+        static const std::regex reFund(R"(^(f_\d{6}|fu_\d{6}|pwbfbyd_\d{6}|pwbfbjd_\d{6}|pwbfbnd_\d{6}|ljjz_\d{6}|dwjz_\d{6}|lshb_\d{6})$)");
+        static const std::regex reCNOption(R"(^CON_OP_\w+)");
+        static const std::regex rePMOption(R"(^P_OP_\w+)");
+        static const std::regex reGlobalIndex(R"(^znb_\w+)");
+        static const std::regex reForex(R"(^fx_.+$)");
+        static const std::regex reForexYT(R"(^(DINIW|USDCNY)$)");
+        static const std::regex reCFF(R"(^CFF_RE_.+$)");
+        static const std::regex reMSCI(R"(^msci_\w+)");
+        static const std::regex reAllDigit(R"(^\d+$)");
+
+        if (std::regex_match(s, reRepo))
         {
-            return "A";
+            return MarketType::MarketType_REPO;
         }
-        else if (code.find("gb_") == 0 || code.find("usr_") == 0)
+        else if (std::regex_match(s, reSI))
         {
-            return "US";
+            return MarketType::MarketType_SI;
         }
-        else if (code.find("hf_") == 0)
+        else if (std::regex_match(s, reCNStock))
         {
-            return "HF";
+            return MarketType::MarketType_SZ_SH;
         }
-        else if (code.find("nf_") == 0)
+        else if (std::regex_match(s, reBJ))
         {
-            return "NF";
+            return MarketType::MarketType_BJ;
         }
-        else if (code.find("si") == 0)
+        else if (std::regex_match(s, reGN))
         {
-            return "SI";
+            return MarketType::MarketType_GN;
         }
-        else if (code.find("DINIW") != wxString::npos || code.find("XAGUSD") != wxString::npos || code.find("XAUUSD") != wxString::npos || code.find("EURI") != wxString::npos)
+        else if (std::regex_match(s, reHY))
         {
-            return "DINIW";
+            return MarketType::MarketType_HY;
         }
-        else if (code.find("fx_s") == 0)
+        else if (std::regex_match(s, reDY))
         {
-            return "FX";
+            return MarketType::MarketType_DY;
         }
-        else if (code.find("b_") == 0)
+        else if (std::regex_match(s, reCNI))
         {
-            return "B";
+            return MarketType::MarketType_CNI;
         }
-        else if (code.find("lse_") == 0)
+        else if (std::regex_match(s, reSBOTC))
         {
-            return "LSE";
+            return MarketType::MarketType_OTC;
         }
-        else if (code.find("gds_") == 0)
+        else if (std::regex_match(s, reOTC48))
         {
-            return "GOODS";
+            return MarketType::MarketType_OTC;
         }
-        else if (code.find("znb_") == 0)
+        else if (std::regex_match(s, reOTCPrefix))
         {
-            return "ZNB";
+            return MarketType::MarketType_OTC;
         }
-        else if (code.find("hk") == 0)
+        else if (std::regex_match(s, reBTC))
         {
-            return "HK";
+            return MarketType::MarketType_BTC;
         }
-        else if (code.find("sb") == 0)
+        else if (std::regex_match(s, reUS))
         {
-            return "SB";
+            return MarketType::MarketType_US;
         }
-        else if (code.find("btc_") == 0)
+        else if (std::regex_match(s, reHKPreIPO))
         {
-            return "BT";
+            return MarketType::MarketType_HKAP;
         }
-        else if (code.find("f_") == 0)
+        else if (std::regex_match(s, reHK))
         {
-            return "FUND";
+            return MarketType::MarketType_HK;
         }
-        else if (code.find("msci_") == 0)
+        else if (std::regex_match(s, reHF))
         {
-            return "MSCI";
+            return MarketType::MarketType_HF;
         }
-        else if (code.find("rt_") == 0)
+        else if (std::regex_match(s, reGlobalBD))
         {
-            return "RTHK";
+            return MarketType::MarketType_globalbd;
         }
-        else if (code.size() > 7 && (code.find("hy") == 0 || code.find("gn") == 0 || code.find("dy") == 0))
+        else if (std::regex_match(s, reLSE))
         {
-            return "BLOCK";
+            return MarketType::MarketType_LSE;
         }
-        else if (code.find("globalbd_") == 0)
+        else if (std::regex_match(s, reNF))
         {
-            return "GlobalBD";
+            return MarketType::MarketType_NF;
+        }
+        else if (std::regex_match(s, reGOODS))
+        {
+            return MarketType::MarketType_GOODS;
+        }
+        else if (std::regex_match(s, reFund))
+        {
+            return MarketType::MarketType_fund;
+        }
+        else if (std::regex_match(s, reCNOption))
+        {
+            return MarketType::MarketType_option_cn;
+        }
+        else if (std::regex_match(s, rePMOption))
+        {
+            return MarketType::MarketType_op_m;
+        }
+        else if (std::regex_match(s, reGlobalIndex))
+        {
+            return MarketType::MarketType_global_index;
+        }
+        else if (std::regex_match(s, reForex))
+        {
+            return MarketType::MarketType_forex;
+        }
+        else if (std::regex_match(s, reForexYT))
+        {
+            return MarketType::MarketType_forex_yt;
+        }
+        else if (std::regex_match(s, reCFF))
+        {
+            return MarketType::MarketType_CFF;
+        }
+        else if (std::regex_match(s, reMSCI))
+        {
+            return MarketType::MarketType_MSCI;
+        }
+        else if (std::regex_match(s, reAllDigit))
+        {
+            return MarketType::MarketType_NF;
         }
         else
         {
-            return "NODATA";
+            return MarketType::MarketType_UNKNOWN;
+        }
+    }
+
+    /**
+     * HQ_DataApps.js#getMarket
+     */
+    GetMarketType getMarket(const wxString &code)
+    {
+        static const std::regex reBJ(R"(^bj\w+)");
+        static const std::regex reBlock(R"((hy|gn|dy)\d{7})", std::regex_constants::icase);
+
+        const std::string s = std::string(code.ToUTF8());
+
+        if (code.StartsWith(wxT("sh")) || code.StartsWith(wxT("sz")) || std::regex_search(s, reBJ))
+        {
+            return GetMarketType::GetMarketType_A;
+        }
+        else if (code.StartsWith(wxT("gb_")) || code.StartsWith(wxT("usr_")))
+        {
+            return GetMarketType::GetMarketType_US;
+        }
+        else if (code.StartsWith(wxT("hf_")))
+        {
+            return GetMarketType::GetMarketType_HF;
+        }
+        else if (code.StartsWith(wxT("nf_")))
+        {
+            return GetMarketType::GetMarketType_NF;
+        }
+        else if (code.StartsWith(wxT("si")))
+        {
+            return GetMarketType::GetMarketType_SI;
+        }
+        else if (code.Find(wxT("DINIW")) != wxNOT_FOUND ||
+                 code.Find(wxT("XAGUSD")) != wxNOT_FOUND ||
+                 code.Find(wxT("XAUUSD")) != wxNOT_FOUND ||
+                 code.Find(wxT("EURI")) != wxNOT_FOUND)
+        {
+            return GetMarketType::GetMarketType_DINIW;
+        }
+        else if (code.StartsWith(wxT("fx_s")))
+        {
+            return GetMarketType::GetMarketType_FX;
+        }
+        else if (code.StartsWith(wxT("b_")))
+        {
+            return GetMarketType::GetMarketType_B;
+        }
+        else if (code.StartsWith(wxT("lse_")))
+        {
+            return GetMarketType::GetMarketType_LSE;
+        }
+        else if (code.StartsWith(wxT("gds_")))
+        {
+            return GetMarketType::GetMarketType_GOODS;
+        }
+        else if (code.StartsWith(wxT("znb_")))
+        {
+            return GetMarketType::GetMarketType_ZNB;
+        }
+        else if (code.StartsWith(wxT("hk")))
+        {
+            return GetMarketType::GetMarketType_HK;
+        }
+        else if (code.StartsWith(wxT("sb")))
+        {
+            return GetMarketType::GetMarketType_SB;
+        }
+        else if (code.StartsWith(wxT("btc_")))
+        {
+            return GetMarketType::GetMarketType_BT;
+        }
+        else if (code.StartsWith(wxT("f_")))
+        {
+            return GetMarketType::GetMarketType_FUND;
+        }
+        else if (code.StartsWith(wxT("msci_")))
+        {
+            return GetMarketType::GetMarketType_MSCI;
+        }
+        else if (code.StartsWith(wxT("rt_")))
+        {
+            return GetMarketType::GetMarketType_RTHK;
+        }
+        else if (std::regex_search(s, reBlock))
+        {
+            return GetMarketType::GetMarketType_BLOCK;
+        }
+        else if (code.StartsWith(wxT("globalbd_")))
+        {
+            return GetMarketType::GetMarketType_GlobalBD;
+        }
+        else
+        {
+            return GetMarketType::GetMarketType_UNKNOWN;
         }
     }
 
@@ -1117,9 +1260,13 @@ namespace STOCK
         return LStockPeriodType::UNKNOWN;
     }
 
-    void LStockData::LoadByConfig(const wxString &raw_data)
+    bool LStockData::LoadByConfig(const wxString &raw_data)
     {
         wxArrayString cfg = UtilStringHlp::split(raw_data, ",");
+        if (cfg.empty() || cfg.size() < 4)
+        {
+            return false;
+        }
         wxString copy_code = cfg[0];
         copy_code.Replace(CFG_REPLACE_STR, ",");
         wxString copy_name = cfg[1];
@@ -1129,10 +1276,33 @@ namespace STOCK
         wxString copy_url = cfg[3];
         copy_url.Replace(CFG_REPLACE_STR, ",");
 
+        wxString copy_decimals = wxEmptyString;
+        if (cfg.size() > 4)
+        {
+            copy_decimals = cfg[4];
+            copy_decimals.Replace(CFG_REPLACE_STR, ",");
+        }
+
         code = copy_code;
         name = copy_name;
         type = copy_type;
         url = copy_url;
+        if (copy_decimals.empty())
+        {
+            decimals = DEFAULT_DECIMAL_PLACES;
+        }
+        else
+        {
+            if (!copy_decimals.ToUInt(&decimals))
+            {
+                decimals = DEFAULT_DECIMAL_PLACES;
+            }
+            if (decimals > MAX_DECIMAL_PLACES || decimals < MIN_DECIMAL_PLACES)
+            {
+                decimals = DEFAULT_DECIMAL_PLACES;
+            }
+        }
+        return true;
     }
 
     wxString LStockData::ToConfig() const
@@ -1145,18 +1315,20 @@ namespace STOCK
         copy_type.Replace(",", CFG_REPLACE_STR, true);
         wxString copy_url = wxString(url);
         copy_url.Replace(",", CFG_REPLACE_STR, true);
+        wxString copy_decimals = wxString::Format("%d", decimals);
         wxArrayString cfg;
         cfg.push_back(copy_code);
         cfg.push_back(copy_name);
         cfg.push_back(copy_type);
         cfg.push_back(copy_url);
+        cfg.push_back(copy_decimals);
         return UtilStringHlp::vectorJoinString(cfg, ",");
     }
 
-    wxString LStockData::GetBridgData(LStockPeriodType type) const
+        wxString LStockData::GetBridgData(LStockPeriodType type) const
     {
-        auto pointDataIt = period_data_map.find(type);
-        if (pointDataIt == period_data_map.end())
+        auto pointRawDataIt = period_raw_data_map.find(type);
+        if (pointRawDataIt == period_raw_data_map.end())
         {
             return wxEmptyString;
         }
@@ -1167,44 +1339,24 @@ namespace STOCK
 
         yyjson_mut_val *timeRangeObj = yyjson_mut_obj(doc);
 
-        //"start": "09:30:00",
-        //"end" : "15:30:00",
-        //"breakStart" : "11:30:00",
-        //"breakEnd" : "13:00:00"
+        wxString start, end, breakStart, breakEnd = wxEmptyString;
 
-        // hkap: [["16:15", "18:30"]],
-        // uk: [["8:00", "16:30"]],
-        // repo: [["9:30", "11:30"], ["13:00", "15:30"]],
-
-        // isSZRepo: function(e) {
-        //     return /^sz1318\d{2}$/.test(e) ? "repo" : !1
-        // },
-        // isRepos: function(e) {
-        //     return /^(sh204\d{3}|sz1318\d{2})$/.test(e)
-        // },
-        // isBJ: function(e) {
-        //     return /^bjd{6}$/.test(e)
-        // },
-        // isGZ: function(e) {
-        //     return /^sh(009|010|018)\d{3}$/.test(e) ? "bond" : /^sh11\d{4}$/.test(e) ? "bond" : !1
-        // },
-        // isBond: function(e) {
-        //     return /^(sh204\d{3}|sz1318\d{2})$/.test(e) ? "bond" : /^sh020\d{3}$/.test(e) ? "bond" : /^sz108\d{3}$/.test(e) ? "bond" : /^sh(009|010|018)\d{3}$/.test(e) ? "bond" : /^sz10\d{4}$/.test(e) ? "bond" : /^sh(100|110|112|113)\d{3}$/.test(e) ? "bond" : /^sz12\d{4}$/.test(e) ? "bond" : /^sh11\d{4}$/.test(e) ? "bond" : /^sh(105|120|129|139)\d{3}$/.test(e) ? "bond" : /^sz11\d{4}$/.test(e) ? "bond" : /^sh12\d{4}$/.test(e) ? "bond" : !1
-        // },
-        // tp: function(e) {
-        //     return toString.call(e).slice(8, -1)
-        // },
-        wxString start, end, breakStart, breakEnd;
-        if (this->market == "GlobalBD")
+        switch (market(this->code))
         {
-            // globalbd: [["08:00", "23:59"], ["00:00", "07:59"]],
-            start = "00:00";
-            end = "23:59";
-            breakStart = "";
-            breakEnd = "";
-        }
-        else if (this->market == "A" || this->market == "SI")
-        {
+        case MarketType::MarketType_REPO:
+            // repo: [["9:30", "11:30"], ["13:00", "15:30"]],
+            start = "09:30";
+            end = "15:30";
+            breakStart = "11:30";
+            breakEnd = "13:00";
+            break;
+        case MarketType::MarketType_SZ_SH:
+        case MarketType::MarketType_BJ:
+        case MarketType::MarketType_GN:
+        case MarketType::MarketType_HY:
+        case MarketType::MarketType_SI:
+        case MarketType::MarketType_CNI:
+        case MarketType::MarketType_DY:
             // si: [["09:30", "11:30"], ["13:01", "15:00"]],
             // cnplate: [["09:30", "11:30"], ["13:01", "15:00"]],
             // cn: [["09:30", "11:30"], ["13:01", "15:00"]],
@@ -1212,51 +1364,88 @@ namespace STOCK
             end = "15:00";
             breakStart = "11:30";
             breakEnd = "13:01";
-        }
-        else if (this->market == "US")
-        {
+            break;
+        case MarketType::MarketType_OTC:
+            break;
+        case MarketType::MarketType_US:
             // us: [["9:30", "16:00"]],
             start = "9:30";
             end = "16:00";
             breakStart = "";
             breakEnd = "";
-        }
-        else if (this->market == "HK")
-        {
+            break;
+        case MarketType::MarketType_HKAP:
+            // hkap: [["16:15", "18:30"]],
+            start = "16:15";
+            end = "18:30";
+            breakStart = "";
+            breakEnd = "";
+            break;
+        case MarketType::MarketType_HK:
             // hk: [["09:30", "11:59"], ["13:00", "16:00"]],
             start = "09:30";
             end = "16:00";
             breakStart = "11:59";
             breakEnd = "13:00";
-        }
-        else if (this->market == "LSE")
-        {
+            break;
+        case MarketType::MarketType_HF:
+            // hf: undefined,
+            start = "00:00";
+            end = "23:59";
+            breakStart = "05:00";
+            breakEnd = "06:00";
+            break;
+        case MarketType::MarketType_globalbd:
+            // globalbd: [["08:00", "23:59"], ["00:00", "07:59"]],
+            start = "00:00";
+            end = "23:59";
+            breakStart = "";
+            breakEnd = "";
+            break;
+        case MarketType::MarketType_LSE:
+        case MarketType::MarketType_BTC:
             // LSE: [["8:00", "16:30"]],
+            // uk: [["8:00", "16:30"]],
             start = "8:00";
             end = "16:30";
             breakStart = "";
             breakEnd = "";
-        }
-        else if (this->market == "GOODS")
-        {
+            break;
+        case MarketType::MarketType_NF:
+            // nf: undefined,
+            break;
+        case MarketType::MarketType_GOODS:
             // goods: [["20:00", "23:59"], ["00:00", "02:29"], ["09:00", "15:30"]],
             start = "00:00";
             end = "23:59";
             breakStart = "02:29,15:30";
             breakEnd = "09:00,20:00";
-        }
-        else if (this->market == "MSCI")
-        {
+            break;
+        case MarketType::MarketType_fund:
+            break;
+        case MarketType::MarketType_option_cn:
+            break;
+        case MarketType::MarketType_op_m:
+            break;
+        case MarketType::MarketType_global_index:
+            break;
+        case MarketType::MarketType_forex:
+            break;
+        case MarketType::MarketType_forex_yt:
+            break;
+        case MarketType::MarketType_CFF:
+            break;
+        case MarketType::MarketType_MSCI:
             // msci: [["07:00", "23:59"], ["00:00", "06:00"]],
             start = "00:00";
             end = "23:59";
             breakStart = "06:00";
             breakEnd = "07:00";
+            break;
+        default:
+            break;
         }
-        else
-        {
-            return wxEmptyString;
-        }
+
         yyjson_mut_obj_add_strcpy(doc, timeRangeObj, "start", start.ToUTF8());
         yyjson_mut_obj_add_strcpy(doc, timeRangeObj, "end", end.ToUTF8());
         yyjson_mut_obj_add_strcpy(doc, timeRangeObj, "breakStart", breakStart.ToUTF8());
@@ -1269,26 +1458,10 @@ namespace STOCK
         yyjson_mut_obj_add_real(doc, newestObj, "high", this->high);
         yyjson_mut_obj_add_real(doc, newestObj, "low", this->low);
 
-        yyjson_mut_val *pointsArr = yyjson_mut_arr(doc);
-        for (wxSharedPtr<STOCK::LStockPeriodDataBase> item : pointDataIt->second)
-        {
-            //"avg_p": "5.05",
-            //"m" : "09:30:00",
-            //"p" : "5.05",
-            //"tot_v" : "8163761",
-            //"v" : "8163761"
-            yyjson_mut_val *itemObj = yyjson_mut_obj(doc);
-            yyjson_mut_obj_add_real(doc, itemObj, "avg_p", item->averagePrice);
-            yyjson_mut_obj_add_strcpy(doc, itemObj, "m", item->time.ToUTF8());
-            yyjson_mut_obj_add_real(doc, itemObj, "p", item->price);
-            yyjson_mut_obj_add_int(doc, itemObj, "tot_v", item->accumulationVolume);
-            yyjson_mut_obj_add_int(doc, itemObj, "v", item->volume);
-            yyjson_mut_arr_append(pointsArr, itemObj);
-        }
-
         yyjson_mut_obj_add_val(doc, root, "time_range", timeRangeObj);
         yyjson_mut_obj_add_val(doc, root, "newest", newestObj);
-        yyjson_mut_obj_add_val(doc, root, "points", pointsArr);
+        yyjson_mut_obj_add_strcpy(doc, root, "raw_data", pointRawDataIt->second);
+        yyjson_mut_obj_add_real(doc, root, "decimals", this->decimals);
 
         size_t jsonLen = 0;
         char *jsonStr = yyjson_mut_write(doc, 0, &jsonLen);
@@ -1299,11 +1472,176 @@ namespace STOCK
             result = wxString::FromUTF8(jsonStr, jsonLen);
             free(jsonStr);
         }
-        
+
         yyjson_mut_doc_free(doc);
 
         return result;
     }
+
+    // wxString LStockData::GetBridgData(LStockPeriodType type) const
+    // {
+    //     auto pointDataIt = period_data_map.find(type);
+    //     if (pointDataIt == period_data_map.end())
+    //     {
+    //         return wxEmptyString;
+    //     }
+
+    //     yyjson_mut_doc *doc = yyjson_mut_doc_new(nullptr);
+    //     yyjson_mut_val *root = yyjson_mut_obj(doc);
+    //     yyjson_mut_doc_set_root(doc, root);
+
+    //     yyjson_mut_val *timeRangeObj = yyjson_mut_obj(doc);
+
+    //     wxString start, end, breakStart, breakEnd = wxEmptyString;
+
+    //     switch (market(this->code))
+    //     {
+    //     case MarketType::MarketType_REPO:
+    //         // repo: [["9:30", "11:30"], ["13:00", "15:30"]],
+    //         start = "09:30";
+    //         end = "15:30";
+    //         breakStart = "11:30";
+    //         breakEnd = "13:00";
+    //         break;
+    //     case MarketType::MarketType_SZ_SH:
+    //     case MarketType::MarketType_BJ:
+    //     case MarketType::MarketType_GN:
+    //     case MarketType::MarketType_HY:
+    //     case MarketType::MarketType_SI:
+    //     case MarketType::MarketType_CNI:
+    //     case MarketType::MarketType_DY:
+    //         // si: [["09:30", "11:30"], ["13:01", "15:00"]],
+    //         // cnplate: [["09:30", "11:30"], ["13:01", "15:00"]],
+    //         // cn: [["09:30", "11:30"], ["13:01", "15:00"]],
+    //         start = "09:30";
+    //         end = "15:00";
+    //         breakStart = "11:30";
+    //         breakEnd = "13:01";
+    //         break;
+    //     case MarketType::MarketType_OTC:
+    //         break;
+    //     case MarketType::MarketType_US:
+    //         // us: [["9:30", "16:00"]],
+    //         start = "9:30";
+    //         end = "16:00";
+    //         breakStart = "";
+    //         breakEnd = "";
+    //         break;
+    //     case MarketType::MarketType_HKAP:
+    //         // hkap: [["16:15", "18:30"]],
+    //         start = "16:15";
+    //         end = "18:30";
+    //         breakStart = "";
+    //         breakEnd = "";
+    //         break;
+    //     case MarketType::MarketType_HK:
+    //         // hk: [["09:30", "11:59"], ["13:00", "16:00"]],
+    //         start = "09:30";
+    //         end = "16:00";
+    //         breakStart = "11:59";
+    //         breakEnd = "13:00";
+    //         break;
+    //     case MarketType::MarketType_HF:
+    //         // hf: undefined,
+    //         break;
+    //     case MarketType::MarketType_globalbd:
+    //         // globalbd: [["08:00", "23:59"], ["00:00", "07:59"]],
+    //         start = "00:00";
+    //         end = "23:59";
+    //         breakStart = "";
+    //         breakEnd = "";
+    //         break;
+    //     case MarketType::MarketType_LSE:
+    //     case MarketType::MarketType_BTC:
+    //         // LSE: [["8:00", "16:30"]],
+    //         // uk: [["8:00", "16:30"]],
+    //         start = "8:00";
+    //         end = "16:30";
+    //         breakStart = "";
+    //         breakEnd = "";
+    //         break;
+    //     case MarketType::MarketType_NF:
+    //         // nf: undefined,
+    //         break;
+    //     case MarketType::MarketType_GOODS:
+    //         // goods: [["20:00", "23:59"], ["00:00", "02:29"], ["09:00", "15:30"]],
+    //         start = "00:00";
+    //         end = "23:59";
+    //         breakStart = "02:29,15:30";
+    //         breakEnd = "09:00,20:00";
+    //         break;
+    //     case MarketType::MarketType_fund:
+    //         break;
+    //     case MarketType::MarketType_option_cn:
+    //         break;
+    //     case MarketType::MarketType_op_m:
+    //         break;
+    //     case MarketType::MarketType_global_index:
+    //         break;
+    //     case MarketType::MarketType_forex:
+    //         break;
+    //     case MarketType::MarketType_forex_yt:
+    //         break;
+    //     case MarketType::MarketType_CFF:
+    //         break;
+    //     case MarketType::MarketType_MSCI:
+    //         // msci: [["07:00", "23:59"], ["00:00", "06:00"]],
+    //         start = "00:00";
+    //         end = "23:59";
+    //         breakStart = "06:00";
+    //         breakEnd = "07:00";
+    //         break;
+    //     default:
+    //         break;
+    //     }
+
+    //     yyjson_mut_obj_add_strcpy(doc, timeRangeObj, "start", start.ToUTF8());
+    //     yyjson_mut_obj_add_strcpy(doc, timeRangeObj, "end", end.ToUTF8());
+    //     yyjson_mut_obj_add_strcpy(doc, timeRangeObj, "breakStart", breakStart.ToUTF8());
+    //     yyjson_mut_obj_add_strcpy(doc, timeRangeObj, "breakEnd", breakEnd.ToUTF8());
+
+    //     yyjson_mut_val *newestObj = yyjson_mut_obj(doc);
+    //     yyjson_mut_obj_add_real(doc, newestObj, "open", this->open);
+    //     yyjson_mut_obj_add_real(doc, newestObj, "prevclose", this->prevclose);
+    //     yyjson_mut_obj_add_real(doc, newestObj, "price", this->price);
+    //     yyjson_mut_obj_add_real(doc, newestObj, "high", this->high);
+    //     yyjson_mut_obj_add_real(doc, newestObj, "low", this->low);
+
+    //     yyjson_mut_val *pointsArr = yyjson_mut_arr(doc);
+    //     for (wxSharedPtr<STOCK::LStockPeriodDataBase> item : pointDataIt->second)
+    //     {
+    //         //"avg_p": "5.05",
+    //         //"m" : "09:30:00",
+    //         //"p" : "5.05",
+    //         //"tot_v" : "8163761",
+    //         //"v" : "8163761"
+    //         yyjson_mut_val *itemObj = yyjson_mut_obj(doc);
+    //         yyjson_mut_obj_add_real(doc, itemObj, "avg_p", item->averagePrice);
+    //         yyjson_mut_obj_add_strcpy(doc, itemObj, "m", item->time.ToUTF8());
+    //         yyjson_mut_obj_add_real(doc, itemObj, "p", item->price);
+    //         yyjson_mut_obj_add_int(doc, itemObj, "tot_v", item->accumulationVolume);
+    //         yyjson_mut_obj_add_int(doc, itemObj, "v", item->volume);
+    //         yyjson_mut_arr_append(pointsArr, itemObj);
+    //     }
+
+    //     yyjson_mut_obj_add_val(doc, root, "time_range", timeRangeObj);
+    //     yyjson_mut_obj_add_val(doc, root, "newest", newestObj);
+    //     yyjson_mut_obj_add_val(doc, root, "points", pointsArr);
+
+    //     size_t jsonLen = 0;
+    //     char *jsonStr = yyjson_mut_write(doc, 0, &jsonLen);
+
+    //     wxString result = wxEmptyString;
+    //     if (jsonStr && jsonLen > 0)
+    //     {
+    //         result = wxString::FromUTF8(jsonStr, jsonLen);
+    //         free(jsonStr);
+    //     }
+
+    //     yyjson_mut_doc_free(doc);
+
+    //     return result;
+    // }
 
     wxSharedPtr<LStockData> LStockListVM::GetRowData(const wxDataViewItem &item)
     {
@@ -1334,6 +1672,9 @@ namespace STOCK
         case Col_CodeText:
             variant = data->code;
             break;
+        case Col_DecimalsText:
+            variant = (long)data->decimals;
+            break;
         }
     }
 
@@ -1350,6 +1691,9 @@ namespace STOCK
         case Col_CodeText:
             attr.SetColour(wxColour(*wxBLACK));
             return true;
+        case Col_DecimalsText:
+            attr.SetColour(wxColour(*wxBLACK));
+            break;
         }
 
         return false;
@@ -1357,79 +1701,226 @@ namespace STOCK
 
     bool LStockListVM::SetValueByRow(const wxVariant &variant, unsigned int row, unsigned int col)
     {
-        //    if (row >= m_row_data.size())
-        //    {
-        //        return false;
-        //    }
-        //    LStockRowData *data = m_row_data[row];
-        //    switch (col)
-        //    {
-        //    case Col_NameText:
-        //        data->item_name = variant.GetString();
-        //        break;
-        //    case Col_CodeText:
-        //        data->item_code = variant.GetString();
-        //        break;
-        //    }
-        //    return true;
-        return false;
-    }
-
-    bool LStockPeriodTimelineData::LoadJsonIterator(wxString json_data, yyjson_arr_iter *iter, yyjson_doc **out_doc)
-    {
-        if (iter == nullptr || out_doc == nullptr)
+        if (row >= m_row_data.size())
         {
             return false;
         }
-        *out_doc = nullptr;
-
-        wxScopedCharBuffer utf8Buf = json_data.utf8_str();
-        const char *utf8Str = utf8Buf.data();
-        size_t utf8Len = utf8Buf.length();
-        if (utf8Str == nullptr || utf8Len == 0)
+        auto data = m_row_data[row];
+        switch (col)
         {
-            return false;
-        }
-
-        yyjson_doc *doc = yyjson_read(utf8Str, utf8Len, 0);
-        if (doc == nullptr)
-        {
-            return false;
-        }
-
-        yyjson_val *root = yyjson_doc_get_root(doc);
-        if (root == nullptr || !yyjson_is_obj(root))
-        {
-            yyjson_doc_free(doc);
-            return false;
-        }
-
-        yyjson_val *result = yyjson_obj_get(root, "result");
-        if (result == nullptr || !yyjson_is_obj(result))
-        {
-            yyjson_doc_free(doc);
-            return false;
-        }
-
-        yyjson_val *data = yyjson_obj_get(result, "data");
-        if (data != nullptr && yyjson_is_arr(data))
-        {
-            yyjson_arr_iter_init(data, iter);
-            *out_doc = doc; // 传出doc指针，调用者用完必须手动释放
+        case Col_DecimalsText:
+            long val = variant.GetLong();
+            if (val > MAX_DECIMAL_PLACES || val < MIN_DECIMAL_PLACES)
+            {
+                return false;
+            }
+            data->decimals = val;
             return true;
         }
-
-        yyjson_doc_free(doc);
         return false;
     }
 
-    void LStockPeriodTimelineData::DispatchHandle(yyjson_val *item)
-    {
-        time = UtilJsonHlp::GetString(item, "m");
-        volume = UtilJsonHlp::GetLL(item, "v");
-        price = UtilJsonHlp::GetDouble(item, "p");
-        averagePrice = UtilJsonHlp::GetDouble(item, "avg_p");
-        accumulationVolume = UtilJsonHlp::GetLL(item, "tot_v");
-    }
+    // bool LStockPeriodTimelineData::LoadJsonIterator(MarketType type, wxString json_data, yyjson_arr_iter *iter, yyjson_doc **out_doc)
+    // {
+    //     if (iter == nullptr || out_doc == nullptr)
+    //     {
+    //         return false;
+    //     }
+    //     *out_doc = nullptr;
+
+    //     wxScopedCharBuffer utf8Buf = json_data.utf8_str();
+    //     const char *utf8Str = utf8Buf.data();
+    //     size_t utf8Len = utf8Buf.length();
+    //     if (utf8Str == nullptr || utf8Len == 0)
+    //     {
+    //         return false;
+    //     }
+
+    //     yyjson_doc *doc = yyjson_read(utf8Str, utf8Len, 0);
+    //     if (doc == nullptr)
+    //     {
+    //         return false;
+    //     }
+
+    //     yyjson_val *root = yyjson_doc_get_root(doc);
+    //     if (root == nullptr || !yyjson_is_obj(root))
+    //     {
+    //         yyjson_doc_free(doc);
+    //         return false;
+    //     }
+
+    //     switch (type)
+    //     {
+    //     case MarketType::MarketType_REPO:
+    //         // {
+    //         //     "result": {
+    //         //         "status": {
+    //         //             "code": 0,
+    //         //             "msg": "MySql:lv1:success"
+    //         //         },
+    //         //         "data": [
+    //         //             {
+    //         //                 "m": "09:30:00",
+    //         //                 "v": "477000",
+    //         //                 "p": "7.19",
+    //         //                 "avg_p": "7.19",
+    //         //                 "tot_v": "477000"
+    //         //             },
+    //         //         ]
+    //         //     }
+    //         // }
+    //     case MarketType::MarketType_BJ:
+    //     case MarketType::MarketType_SI:
+    //     case MarketType::MarketType_CNI:
+    //     case MarketType::MarketType_DY:
+    //     case MarketType::MarketType_GN:
+    //     case MarketType::MarketType_HY:
+    //     case MarketType::MarketType_SZ_SH:
+    //         // {
+    //         //     "result": {
+    //         //         "status": {
+    //         //             "code": 0,
+    //         //             "msg": "MySql:lv1:success"
+    //         //         },
+    //         //         "data": [
+    //         //             {
+    //         //                 "m": "09:30:00",
+    //         //                 "v": "5513800",
+    //         //                 "p": "4.96",
+    //         //                 "avg_p": "4.96",
+    //         //                 "tot_v": "5513800"
+    //         //             }
+    //         //         ]
+    //         //     }
+    //         // }
+
+    //         break;
+    //     case MarketType::MarketType_OTC:
+    //         break;
+    //     case MarketType::MarketType_BTC:
+    //         break;
+    //     case MarketType::MarketType_US:
+    //         // /*<script>location.href='//sina.com';</script>*/
+    //         // var t1aapl=("09:30:00,4534779,331.859,332.4800;09:31:00,414814,331.867,331.5050;09:32:00,217974,331.886,332.8530;09:33:00,307562,331.917,332.9920;09:34:00,323419,331.977,333.4400;09:35:00,283580
+
+    //         break;
+    //     case MarketType::MarketType_HK:
+    //     case MarketType::MarketType_HKAP:
+    //         // {
+    //         //     "result": {
+    //         //         "status": {
+    //         //             "code": 0
+    //         //         },
+    //         //         "data": [
+    //         //             [
+    //         //                 {
+    //         //                     "date": "2026-07-17",
+    //         //                     "prevclose": "70.45000",
+    //         //                     "m": "09:30:00",
+    //         //                     "price": "71.10000",
+    //         //                     "volume": "83500",
+    //         //                     "avg_p": "71.055"
+    //         //                 },
+    //         //                 {
+    //         //                     "m": "09:31:00",
+    //         //                     "price": "71.35000",
+    //         //                     "volume": "122500",
+    //         //                     "avg_p": "71.233"
+    //         //                 },
+    //         //             ]
+    //         //         ]
+    //         //     }
+    //         // }
+
+    //         break;
+    //     case MarketType::MarketType_HF:
+    //         // {
+    //         //     "result": {
+    //         //         "status": {
+    //         //             "code": 0
+    //         //         },
+    //         //         "data": {
+    //         //             "minLine_1d": [
+    //         //                 [
+    //         //                     "2026-07-17",
+    //         //                     "3992.100",
+    //         //                     "cme",
+    //         //                     "",
+    //         //                     "06:00",
+    //         //                     "3981.260",
+    //         //                     "0",
+    //         //                     "0",
+    //         //                     "3981.259",
+    //         //                     "2026-07-17 06:00:00"
+    //         //                 ],
+    //         //                 [
+    //         //                     "06:01",
+    //         //                     "3982.021",
+    //         //                     "0",
+    //         //                     "0",
+    //         //                     "3981.442",
+    //         //                     "2026-07-17 06:01:00"
+    //         //                 ],
+    //         //             ]
+    //         //         }
+    //         //     }
+    //         // }
+
+    //         break;
+    //     case MarketType::MarketType_globalbd:
+    //         break;
+    //     case MarketType::MarketType_LSE:
+    //         break;
+    //     case MarketType::MarketType_NF:
+    //         break;
+    //     case MarketType::MarketType_GOODS:
+    //         break;
+    //     case MarketType::MarketType_fund:
+    //         break;
+    //     case MarketType::MarketType_option_cn:
+    //         break;
+    //     case MarketType::MarketType_op_m:
+    //         break;
+    //     case MarketType::MarketType_global_index:
+    //         break;
+    //     case MarketType::MarketType_forex:
+    //         break;
+    //     case MarketType::MarketType_forex_yt:
+    //         break;
+    //     case MarketType::MarketType_CFF:
+    //         break;
+    //     case MarketType::MarketType_MSCI:
+    //         break;
+    //     default:
+    //         break;
+    //     }
+
+    //     yyjson_val *result = yyjson_obj_get(root, "result");
+    //     if (result == nullptr || !yyjson_is_obj(result))
+    //     {
+    //         yyjson_doc_free(doc);
+    //         return false;
+    //     }
+
+    //     yyjson_val *data = yyjson_obj_get(result, "data");
+    //     if (data != nullptr && yyjson_is_arr(data))
+    //     {
+    //         yyjson_arr_iter_init(data, iter);
+    //         *out_doc = doc; // 传出doc指针，调用者用完必须手动释放
+    //         return true;
+    //     }
+
+    //     yyjson_doc_free(doc);
+    //     return false;
+    // }
+
+    // void LStockPeriodTimelineData::DispatchHandle(yyjson_val *item)
+    // {
+    //     time = UtilJsonHlp::GetString(item, "m");
+    //     volume = UtilJsonHlp::GetLL(item, "v");
+    //     price = UtilJsonHlp::GetDouble(item, "p");
+    //     averagePrice = UtilJsonHlp::GetDouble(item, "avg_p");
+    //     accumulationVolume = UtilJsonHlp::GetLL(item, "tot_v");
+    // }
 
 }

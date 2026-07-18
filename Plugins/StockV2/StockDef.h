@@ -26,7 +26,72 @@ namespace STOCK
     using Clock = std::chrono::steady_clock;
     using ClockTimePoint = Clock::time_point;
 
-    wxString GetMarketByCode(const wxString &code);
+    enum MarketType
+    {
+        MarketType_REPO,
+        MarketType_SI,
+        MarketType_SZ_SH,
+        MarketType_BJ,
+        MarketType_GN,
+        MarketType_HY,
+        MarketType_DY,
+        MarketType_CNI,
+        MarketType_OTC,
+        MarketType_BTC,
+        MarketType_US,
+        MarketType_HKAP,
+        MarketType_HK,
+        MarketType_HF,
+        MarketType_globalbd,
+        MarketType_LSE,
+        MarketType_NF,
+        MarketType_GOODS,
+        MarketType_fund,
+        MarketType_option_cn,
+        MarketType_op_m,
+        MarketType_global_index,
+        MarketType_forex,
+        MarketType_forex_yt,
+        MarketType_CFF,
+        MarketType_MSCI,
+        MarketType_UNKNOWN,
+    };
+    MarketType market(const wxString &code);
+    bool isCN(MarketType type)
+    {
+        return type == MarketType::MarketType_SZ_SH ||
+               type == MarketType::MarketType_BJ ||
+               type == MarketType::MarketType_GN ||
+               type == MarketType::MarketType_HY ||
+               type == MarketType::MarketType_SI ||
+               type == MarketType::MarketType_CNI ||
+               type == MarketType::MarketType_DY;
+    }
+
+    enum GetMarketType
+    {
+        GetMarketType_A,
+        GetMarketType_US,
+        GetMarketType_HF,
+        GetMarketType_NF,
+        GetMarketType_SI,
+        GetMarketType_DINIW,
+        GetMarketType_FX,
+        GetMarketType_B,
+        GetMarketType_LSE,
+        GetMarketType_GOODS,
+        GetMarketType_ZNB,
+        GetMarketType_HK,
+        GetMarketType_SB,
+        GetMarketType_BT,
+        GetMarketType_FUND,
+        GetMarketType_MSCI,
+        GetMarketType_RTHK,
+        GetMarketType_BLOCK,
+        GetMarketType_GlobalBD,
+        GetMarketType_UNKNOWN,
+    };
+    GetMarketType getMarket(const wxString &code);
 
     //------------------------------------------------------------
     // LStockPeriod*
@@ -52,42 +117,42 @@ namespace STOCK
 
     LStockPeriodType IntToStockPeriodType(int val);
 
-    // 数据周期基类
-    class LStockPeriodDataBase
-    {
-    public:
-        TimePoint time;            // 时间点
-        Volume volume;             // 成交量
-        Price price;               // 价格
-        Price averagePrice;        // 均价
-        Volume accumulationVolume; // 累计成交量
-    public:
-        virtual ~LStockPeriodDataBase() = default;
-        virtual LStockPeriodType GetType() const = 0;
-        // virtual TimePoint GetStartTime() const = 0;
-        // virtual TimePoint GetEndTime() const = 0;
-        //  对外暴露模板接口，内部调用私有虚分发函数
-        template <typename T>
-        void HandleByData(const T &data)
-        {
-            DispatchHandle(data);
-        }
+    // // 数据周期基类
+    // class LStockPeriodDataBase
+    // {
+    // public:
+    //     TimePoint time;            // 时间点
+    //     Volume volume;             // 成交量
+    //     Price price;               // 价格
+    //     Price averagePrice;        // 均价
+    //     Volume accumulationVolume; // 累计成交量
+    // public:
+    //     virtual ~LStockPeriodDataBase() = default;
+    //     virtual LStockPeriodType GetType() const = 0;
+    //     // virtual TimePoint GetStartTime() const = 0;
+    //     // virtual TimePoint GetEndTime() const = 0;
+    //     //  对外暴露模板接口，内部调用私有虚分发函数
+    //     template <typename T>
+    //     void HandleByData(const T &data)
+    //     {
+    //         DispatchHandle(data);
+    //     }
 
-    private:
-        virtual void DispatchHandle(yyjson_val *item) = 0;
-    };
+    // private:
+    //     virtual void DispatchHandle(yyjson_val *item) = 0;
+    // };
 
-    class LStockPeriodTimelineData : public LStockPeriodDataBase
-    {
-    public:
-        LStockPeriodType GetType() const wxOVERRIDE { return LStockPeriodType::TIMELINE; }
+    // class LStockPeriodTimelineData : public LStockPeriodDataBase
+    // {
+    // public:
+    //     LStockPeriodType GetType() const wxOVERRIDE { return LStockPeriodType::TIMELINE; }
 
-    public:
-        static bool LoadJsonIterator(wxString json_data, yyjson_arr_iter *iter, yyjson_doc **out_doc);
+    // public:
+    //     static bool LoadJsonIterator(MarketType type, wxString json_data, yyjson_arr_iter *iter, yyjson_doc **out_doc);
 
-    private:
-        void DispatchHandle(yyjson_val *item) wxOVERRIDE;
-    };
+    // private:
+    //     void DispatchHandle(yyjson_val *item) wxOVERRIDE;
+    // };
 
     class LStockPeriodTypeHash
     {
@@ -113,7 +178,8 @@ namespace STOCK
         LStockPeriodTypeEqual &operator=(const LStockPeriodTypeEqual &) { return *this; }
     };
 
-    WX_DECLARE_HASH_MAP(LStockPeriodType, wxVector<wxSharedPtr<LStockPeriodDataBase>>, LStockPeriodTypeHash, LStockPeriodTypeEqual, StockPeriodDataMap);
+    // WX_DECLARE_HASH_MAP(LStockPeriodType, wxVector<wxSharedPtr<LStockPeriodDataBase>>, LStockPeriodTypeHash, LStockPeriodTypeEqual, StockPeriodDataMap);
+    WX_DECLARE_HASH_MAP(LStockPeriodType, wxString, LStockPeriodTypeHash, LStockPeriodTypeEqual, StockPeriodRawDataMap);
     WX_DECLARE_HASH_MAP(LStockPeriodType, ClockTimePoint, LStockPeriodTypeHash, LStockPeriodTypeEqual, StockPeriodTimeMap);
 
     //------------------------------------------------------------
@@ -132,11 +198,11 @@ namespace STOCK
         wxString type;
         wxString name;
         wxString code;
-        wxString market;
         wxString url;
+        unsigned int decimals; // 小数点位数
 
-        wxString displayPrice;       // change
-        wxString displayFluctuation; // percent
+        wxString changePrice;       // change
+        wxString changeFluctuation; // percent
 
     private:
         Price open;           // 今日开盘价
@@ -149,73 +215,253 @@ namespace STOCK
 
         Price priceLimit; // 价格限制
 
-        StockPeriodDataMap period_data_map;
+        // StockPeriodDataMap period_data_map;
+        StockPeriodRawDataMap period_raw_data_map;
         StockPeriodTimeMap period_time_map;
 
     public:
-        wxString GetCurrentPrice(WXUINT decimals = 2)
+        wxString GetCurrentPrice() const
         {
             return UtilStringHlp::toFixed(price, decimals);
+        }
+
+        wxString GetChangePrice() const
+        {
+            return this->changePrice;
         }
 
     public:
         void LoadByRealtimeData(const wxString &code, const wxString &raw_data);
         void LoadBySearchData(const wxString &raw_data);
-        void LoadByConfig(const wxString &raw_data);
+        bool LoadByConfig(const wxString &raw_data);
         wxString ToConfig() const;
         wxString GetBridgData(LStockPeriodType type) const;
 
-        wxVector<wxSharedPtr<LStockPeriodDataBase>>& MakesureStockPeriodData(LStockPeriodType type)
-        {
-            auto dataIt = period_data_map.find(type);
-            if (dataIt != period_data_map.end())
-            {
-                return dataIt->second;
-            }
-            auto& data = period_data_map[type];
-            auto& time = period_time_map[type];
-            return data;
-        }
+        // wxVector<wxSharedPtr<LStockPeriodDataBase>> &MakesureStockPeriodData(LStockPeriodType type)
+        // {
+        //     auto dataIt = period_data_map.find(type);
+        //     if (dataIt != period_data_map.end())
+        //     {
+        //         return dataIt->second;
+        //     }
+        //     auto &data = period_data_map[type];
+        //     auto &time = period_time_map[type];
+        //     return data;
+        // }
 
-        wxVector<wxSharedPtr<LStockPeriodDataBase>>& ResetStockPeriodData(LStockPeriodType type)
+        // wxVector<wxSharedPtr<LStockPeriodDataBase>> &ResetStockPeriodData(LStockPeriodType type)
+        // {
+        //     auto &&dataIt = MakesureStockPeriodData(type);
+        //     dataIt.clear();
+        //     period_time_map.erase(type);
+        //     return dataIt;
+        // }
+
+        void ResetStockPeriodData(LStockPeriodType type)
         {
-            auto&& dataIt = MakesureStockPeriodData(type);
-            dataIt.clear();
+            period_raw_data_map.erase(type);
             period_time_map.erase(type);
-            return dataIt;
         }
 
-        BOOL CanUpdateStockPeriodData(LStockPeriodType type) {
-            auto&& timeIt = period_time_map.find(type);
-            if (timeIt == period_time_map.end()) {
+        BOOL CanUpdateStockPeriodData(LStockPeriodType type)
+        {
+            auto &&timeIt = period_time_map.find(type);
+            if (timeIt == period_time_map.end())
+            {
                 return -1;
             }
-            auto& m_lastTime = timeIt->second;
+            auto &m_lastTime = timeIt->second;
             ClockTimePoint now = Clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(now - m_lastTime);
             double interval = static_cast<double>(duration.count()) / 1000.0;
             return interval > 5;
         }
 
-        void addTimelineData(wxString json_data)
+        void updatePeriodRawData(LStockPeriodType type, wxString periodRawData)
         {
-            yyjson_doc *doc = NULL;
-            yyjson_arr_iter iter;
-            if (LStockPeriodTimelineData::LoadJsonIterator(json_data, &iter, &doc))
-            {
-                auto& timelineData = ResetStockPeriodData(LStockPeriodType::TIMELINE);
-                yyjson_val *item;
-                while ((item = yyjson_arr_iter_next(&iter)))
-                {
-                    wxSharedPtr<LStockPeriodDataBase> data(new LStockPeriodTimelineData());
-                    data->HandleByData(item);
-                    timelineData.push_back(data);
-                }
-            }
-            period_time_map[LStockPeriodType::TIMELINE] = Clock::now();
-            //LLOG_DEBUG("addTimelineData: %zu", MakesureStockPeriodData(LStockPeriodType::TIMELINE).size());
-            yyjson_doc_free(doc);
+            period_raw_data_map[type] = periodRawData;
         }
+
+        // void addTimelineData(wxString json_data)
+        // {
+        //     yyjson_doc *doc = NULL;
+        //     yyjson_arr_iter iter;
+        //     MarketType type = STOCK::market(this->code);
+
+        //     switch (type)
+        //     {
+        //     case MarketType::MarketType_REPO:
+        //         // {
+        //         //     "result": {
+        //         //         "status": {
+        //         //             "code": 0,
+        //         //             "msg": "MySql:lv1:success"
+        //         //         },
+        //         //         "data": [
+        //         //             {
+        //         //                 "m": "09:30:00",
+        //         //                 "v": "477000",
+        //         //                 "p": "7.19",
+        //         //                 "avg_p": "7.19",
+        //         //                 "tot_v": "477000"
+        //         //             },
+        //         //         ]
+        //         //     }
+        //         // }
+        //     case MarketType::MarketType_BJ:
+        //     case MarketType::MarketType_SI:
+        //     case MarketType::MarketType_CNI:
+        //     case MarketType::MarketType_DY:
+        //     case MarketType::MarketType_GN:
+        //     case MarketType::MarketType_HY:
+        //     case MarketType::MarketType_SZ_SH:
+        //         // {
+        //         //     "result": {
+        //         //         "status": {
+        //         //             "code": 0,
+        //         //             "msg": "MySql:lv1:success"
+        //         //         },
+        //         //         "data": [
+        //         //             {
+        //         //                 "m": "09:30:00",
+        //         //                 "v": "5513800",
+        //         //                 "p": "4.96",
+        //         //                 "avg_p": "4.96",
+        //         //                 "tot_v": "5513800"
+        //         //             }
+        //         //         ]
+        //         //     }
+        //         // }
+
+        //         if (LStockPeriodTimelineData::LoadJsonIterator(type, json_data, &iter, &doc))
+        //         {
+        //             auto &timelineData = ResetStockPeriodData(LStockPeriodType::TIMELINE);
+        //             yyjson_val *item;
+        //             while ((item = yyjson_arr_iter_next(&iter)))
+        //             {
+        //                 wxSharedPtr<LStockPeriodDataBase> data(new LStockPeriodTimelineData());
+        //                 data->HandleByData(item);
+        //                 timelineData.push_back(data);
+        //             }
+        //         }
+        //         period_time_map[LStockPeriodType::TIMELINE] = Clock::now();
+        //         // LLOG_DEBUG("addTimelineData: %zu", MakesureStockPeriodData(LStockPeriodType::TIMELINE).size());
+        //         yyjson_doc_free(doc);
+        //         break;
+        //     case MarketType::MarketType_OTC:
+        //         break;
+        //     case MarketType::MarketType_BTC:
+        //         break;
+        //     case MarketType::MarketType_US:
+        //         // /*<script>location.href='//sina.com';</script>*/
+        //         // var t1aapl=("09:30:00,4534779,331.859,332.4800;09:31:00,414814,331.867,331.5050;09:32:00,217974,331.886,332.8530;09:33:00,307562,331.917,332.9920;09:34:00,323419,331.977,333.4400;09:35:00,283580
+
+        //         break;
+        //     case MarketType::MarketType_HK:
+        //     case MarketType::MarketType_HKAP:
+        //         // {
+        //         //     "result": {
+        //         //         "status": {
+        //         //             "code": 0
+        //         //         },
+        //         //         "data": [
+        //         //             [
+        //         //                 {
+        //         //                     "date": "2026-07-17",
+        //         //                     "prevclose": "70.45000",
+        //         //                     "m": "09:30:00",
+        //         //                     "price": "71.10000",
+        //         //                     "volume": "83500",
+        //         //                     "avg_p": "71.055"
+        //         //                 },
+        //         //                 {
+        //         //                     "m": "09:31:00",
+        //         //                     "price": "71.35000",
+        //         //                     "volume": "122500",
+        //         //                     "avg_p": "71.233"
+        //         //                 },
+        //         //             ]
+        //         //         ]
+        //         //     }
+        //         // }
+
+        //         if (LStockPeriodTimelineData::LoadJsonIterator(type, json_data, &iter, &doc))
+        //         {
+        //             auto &timelineData = ResetStockPeriodData(LStockPeriodType::TIMELINE);
+        //             yyjson_val *item;
+        //             while ((item = yyjson_arr_iter_next(&iter)))
+        //             {
+        //                 wxSharedPtr<LStockPeriodDataBase> data(new LStockPeriodTimelineData());
+        //                 data->HandleByData(item);
+        //                 timelineData.push_back(data);
+        //             }
+        //         }
+        //         period_time_map[LStockPeriodType::TIMELINE] = Clock::now();
+        //         // LLOG_DEBUG("addTimelineData: %zu", MakesureStockPeriodData(LStockPeriodType::TIMELINE).size());
+        //         yyjson_doc_free(doc);
+        //         break;
+        //     case MarketType::MarketType_HF:
+        //         // {
+        //         //     "result": {
+        //         //         "status": {
+        //         //             "code": 0
+        //         //         },
+        //         //         "data": {
+        //         //             "minLine_1d": [
+        //         //                 [
+        //         //                     "2026-07-17",
+        //         //                     "3992.100",
+        //         //                     "cme",
+        //         //                     "",
+        //         //                     "06:00",
+        //         //                     "3981.260",
+        //         //                     "0",
+        //         //                     "0",
+        //         //                     "3981.259",
+        //         //                     "2026-07-17 06:00:00"
+        //         //                 ],
+        //         //                 [
+        //         //                     "06:01",
+        //         //                     "3982.021",
+        //         //                     "0",
+        //         //                     "0",
+        //         //                     "3981.442",
+        //         //                     "2026-07-17 06:01:00"
+        //         //                 ],
+        //         //             ]
+        //         //         }
+        //         //     }
+        //         // }
+
+        //         break;
+        //     case MarketType::MarketType_globalbd:
+        //         break;
+        //     case MarketType::MarketType_LSE:
+        //         break;
+        //     case MarketType::MarketType_NF:
+        //         break;
+        //     case MarketType::MarketType_GOODS:
+        //         break;
+        //     case MarketType::MarketType_fund:
+        //         break;
+        //     case MarketType::MarketType_option_cn:
+        //         break;
+        //     case MarketType::MarketType_op_m:
+        //         break;
+        //     case MarketType::MarketType_global_index:
+        //         break;
+        //     case MarketType::MarketType_forex:
+        //         break;
+        //     case MarketType::MarketType_forex_yt:
+        //         break;
+        //     case MarketType::MarketType_CFF:
+        //         break;
+        //     case MarketType::MarketType_MSCI:
+        //         break;
+        //     default:
+        //         break;
+        //     }
+        // }
 
     private:
         void LoadUrl(const wxString &t, const wxString &s);
@@ -324,6 +570,7 @@ namespace STOCK
         {
             Col_MarketText,
             Col_NameText,
+            Col_DecimalsText,
             Col_CodeText,
         };
 
