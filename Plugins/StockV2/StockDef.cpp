@@ -5,7 +5,7 @@
 
 namespace STOCK
 {
-    std::tuple<wxString, wxString> difference(const wxString &n1, const wxString &n2, const int decimals_1 = 0, const int decimals_2 = 0)
+    std::tuple<wxString, wxString> difference(const wxString &n1, const wxString &n2, const int decimals_1 = 0, const int decimals_2 = 2)
     {
         int n1_decimals;
         int n2_decimals;
